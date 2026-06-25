@@ -129,7 +129,7 @@
 
 | 编号 | 产出 | 验收标准 |
 |------|------|---------|
-| 1 | caidiaweb 首页性能分析 | 用 Chrome DevTools Performance 面板分析，输出瓶颈报告 |
+| 1 | http://172.39.8.61:801/hrmm/#/hrmm-hn/technologyImplementation 技术设施专题性能分析 | 用 Chrome DevTools Performance 面板分析，输出瓶颈报告 |
 | 2 | Service Worker 离线缓存 Demo | 实现离线可用的小页面 |
 | 3 | 浏览器渲染管线笔记 | 用自己的话写出完整渲染流程，存入笔记文件夹 |
 | 4 | HTTP 缓存实验 | 用 Nginx 配置强缓存 + 协商缓存，验证效果 |
