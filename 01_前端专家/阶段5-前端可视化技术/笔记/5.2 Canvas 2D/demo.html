@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <canvas id="cv" width="400" height="300"></canvas>
+    <script>
+        const cv = document.getElementById('cv')
+        const ctx = cv.getContext('2d')   // 获取 2D 上下文
+
+        // 绘制矩形
+        // ctx.fillStyle = "#409eff"
+        // ctx.fillRect(10, 10, 100, 60) // 填充矩形
+        // ctx.strokeStyle = '#303133'
+        // ctx.lineWidth = 2
+        // ctx.strokeRect(10, 10, 100, 60) // 描边矩形
+
+        // 通用路径（灵活，可组合任意形状）
+        // ctx.beginPath()
+        // ctx.rect(130,10,100,60)
+        // ctx.fill()
+        // ctx.stroke()
+        // ctx.closePath()
+
+        // 圆形与弧形
+        // ctx.beginPath()
+        // ctx.arc(100, 100, 50, 0, Math.PI * 2) // (cx, cy, r, 起始角, 结束角)
+        // ctx.fill()
+
+        // ctx.beginPath()
+        // ctx.arc(100, 50, 50, 0, Math.PI * 2) // 0 -> 90° 的四分之一弧
+        // ctx.stroke()
+
+        // 直线
+        // ctx.beginPath()
+        // ctx.moveTo(10, 10)                  // 落笔点
+        // ctx.lineTo(100, 100)                // 连线到
+        // ctx.lineTo(200, 50)
+        // ctx.stroke()
+
+        // // 二次贝塞尔曲线：Q cpX cpY, endX endY
+        // ctx.quadraticCurveTo(150, 10, 200, 100)
+
+        // // 三次贝塞尔曲线：C cp1X cp1Y, cp2X cp2Y, endX endY
+        // ctx.bezierCurveTo(50, 10, 150, 190, 200, 100)
+
+
+        // 渐变
+        // const g = ctx.createLinearGradient(0, 0, 200, 0)
+        // g.addColorStop(0, '#409eff')
+        // g.addColorStop(1, '#67c23a')
+        // ctx.fillStyle = g
+        // ctx.fillRect(0, 0, 200, 100)
+
+
+        // ctx.save()                    // 压入当前状态
+        // ctx.translate(100, 100)       // 平移坐标系
+        // ctx.rotate(Math.PI / 4)       // 旋转
+        // ctx.fillStyle = 'red'
+        // ctx.fillRect(0, 0, 50, 50)
+        // ctx.restore()                 // 弹出，恢复 save 前的状态（含坐标系）
+
+        // ctx.translate(x, y)    // 把原点移到 (x,y)，之后坐标相对新原点
+        // ctx.rotate(rad)        // 绕当前原点旋转
+        // ctx.scale(sx, sy)      // 缩放坐标系
+
+        ctx.font = 'bold 16px "Microsoft YaHei", sans-serif'  // CSS font 简写
+        ctx.fillStyle = '#303133'
+        ctx.textAlign = 'center'        // start|end|left|right|center
+        ctx.textBaseline = 'middle'      // top|middle|bottom|alphabetic
+        ctx.fillText('信号强度', 100, 50)   // 在 (100,50) 绘制填充文字
+        ctx.strokeText('描边字', 100, 80)   // 描边
+
+
+        
+    </script>
+
+
+</body>
+
+</html>
