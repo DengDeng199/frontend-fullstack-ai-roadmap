@@ -1,57 +1,53 @@
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
+<html>
 
 <body>
-    <!-- SignalStrength.vue -->
-    <template>
-        <svg class="signal" viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet" :aria-label="`信号强度 ${level}/4`">
-            <rect v-for="(h, i) in bars" :key="i" :x="2 + i * 6" y="22 - h" width="4" :height="h"
-                :fill="i < level ? activeColor : '#dcdfe6'" rx="1" :class="{ 'bar-pulse': i < level && pulse }" />
-        </svg>
-    </template>
 
-    <script setup>
-        defineProps({
-            level: { type: Number, default: 0 },   // 0-4
-            pulse: { type: Boolean, default: true },
-            activeColor: { type: String, default: '#67c23a' }
-        })
-        const bars = [6, 10, 14, 18]             // 四根柱子的高度
-    </script>
-
-    <style scoped>
-        .signal {
-            width: 100%;
-            height: 100%;
-            max-width: 32px;
-        }
-
-        .bar-pulse {
-            transform-box: fill-box;
-            transform-origin: bottom;
-            animation: breathe 1.6s ease-in-out infinite;
-        }
-
-        @keyframes breathe {
-
-            0%,
-            100% {
-                opacity: 1;
-                transform: scaleY(1);
-            }
-
-            50% {
-                opacity: 0.55;
-                transform: scaleY(0.85);
-            }
-        }
-    </style>
+    <h1>My first SVG</h1>
+    <!-- 矩形（Rectangles）：使用 <rect> 元素绘制矩形，可以指定矩形的位置、大小、圆角等属性。 -->
+    <svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
+        <rect x="50" y="50" width="100" height="50" rx="10" ry="10" fill="blue" />
+    </svg>
+    <!-- 圆形（Circles）：使用 <circle> 元素绘制圆形，可以指定圆心坐标和半径。 -->
+    <svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="100" cy="100" r="50" fill="red"></circle>
+    </svg>
+    <!-- 椭圆（Ellipses）：使用 <ellipse> 元素绘制椭圆，可以指定椭圆的中心坐标和长短轴的半径。 -->
+    <svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="100" cy="100" rx="80" ry="50" fill="green"></ellipse>
+    </svg>
+    <!-- 直线（Lines）：使用 <line> 元素绘制直线，需要指定起点和终点坐标。 -->
+    <svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
+        <line x1="50" y1="50" x2="150" y2="150" stroke="black" stroke-width="1"></line>
+    </svg>
+    <!-- 多边形（Polygons）：使用 <polygon> 元素绘制多边形，需要指定多个顶点的坐标。 -->
+    <svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="100,50 150,150 50,150" fill="orange"></polygon>
+    </svg>
+    <!-- 折线（Polylines）：使用 <polyline> 元素绘制折线，需要指定多个点的坐标。 -->
+    <svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
+        <polyline points="100,50 150,150 50,150 100,50" fill="none" stroke="red" stroke-width="2"></polyline>
+    </svg>
+    <!-- 路径（Paths）：使用 <path> 元素绘制路径，可以通过指定一系列的路径命令来绘制各种形状。 -->
+    <svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
+        <path d="M10 10 L90 10 L90 90 Z" fill="none" stroke="black" stroke-width="2"></path>
+    </svg>
+    <!-- svg 元素属性 -->
+    <svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="100" cy="100" r="50" fill="red" stroke="black" strolke-width="2"></circle>
+    </svg>
+    <!-- 嵌套和分组：SVG 元素可以嵌套和分组，以便更好地组织和管理图形元素。 -->
+    <svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
+        <g id="group1"> <!-- 定义一个分组 -->
+            <!-- 分组内的图形元素 -->
+            <rect x="10" y="10" width="50" height="50" />
+            <circle cx="50" cy="100" r="30" />
+        </g>
+        <g id="group2"> <!-- 定义一个分组 -->
+            <!-- 分组内的图形元素 -->
+            <rect x="110" y="10" width="50" height="50" fill="red" />
+            <circle cx="150" cy="100" r="30" fill="red"/>
+        </g>
+    </svg>
 </body>
 
 </html>

@@ -1,0 +1,414 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 600" width="500" height="600">
+  <defs>
+    <!-- ========== 渐变定义 ========== -->
+    <!-- 头部蓝色渐变 -->
+    <radialGradient id="headBlue" cx="42%" cy="35%" r="55%">
+      <stop offset="0%" stop-color="#73C2ED"/>
+      <stop offset="25%" stop-color="#4DA8DA"/>
+      <stop offset="70%" stop-color="#2980B9"/>
+      <stop offset="100%" stop-color="#1A5F8A"/>
+    </radialGradient>
+
+    <!-- 身体蓝色渐变 -->
+    <radialGradient id="bodyBlue" cx="45%" cy="30%" r="60%">
+      <stop offset="0%" stop-color="#5CAEDB"/>
+      <stop offset="30%" stop-color="#2980B9"/>
+      <stop offset="80%" stop-color="#1A5F8A"/>
+      <stop offset="100%" stop-color="#134B6F"/>
+    </radialGradient>
+
+    <!-- 鼻子渐变 -->
+    <radialGradient id="noseRed" cx="38%" cy="32%" r="55%">
+      <stop offset="0%" stop-color="#FF6B6B"/>
+      <stop offset="35%" stop-color="#E83838"/>
+      <stop offset="80%" stop-color="#C61010"/>
+      <stop offset="100%" stop-color="#8B0000"/>
+    </radialGradient>
+
+    <!-- 铃铛金色渐变 -->
+    <radialGradient id="bellGold" cx="35%" cy="30%" r="55%">
+      <stop offset="0%" stop-color="#FFF5B8"/>
+      <stop offset="30%" stop-color="#FFE44D"/>
+      <stop offset="65%" stop-color="#E6C200"/>
+      <stop offset="100%" stop-color="#B8970B"/>
+    </radialGradient>
+
+    <!-- 铃铛高光 -->
+    <linearGradient id="bellHighlight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.8"/>
+      <stop offset="40%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- 项圈渐变 -->
+    <linearGradient id="collarRed" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#E83030"/>
+      <stop offset="40%" stop-color="#CC1A1A"/>
+      <stop offset="100%" stop-color="#991010"/>
+    </linearGradient>
+
+    <!-- 白色肚皮渐变 -->
+    <radialGradient id="bellyWhite" cx="50%" cy="40%" r="55%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="70%" stop-color="#F5F5F5"/>
+      <stop offset="100%" stop-color="#E0E0E0"/>
+    </radialGradient>
+
+    <!-- 嘴巴内部渐变 -->
+    <radialGradient id="mouthInner" cx="50%" cy="30%" r="60%">
+      <stop offset="0%" stop-color="#FF7B7B"/>
+      <stop offset="60%" stop-color="#E84848"/>
+      <stop offset="100%" stop-color="#C42828"/>
+    </radialGradient>
+
+    <!-- 四次元口袋渐变 -->
+    <linearGradient id="pocketGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#E8E8E8"/>
+    </linearGradient>
+
+    <!-- ========== 滤镜定义 ========== -->
+    <!-- 总投影 -->
+    <filter id="shadow" x="-8%" y="-5%" width="120%" height="115%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#00000030"/>
+    </filter>
+
+    <!-- 头部内阴影 -->
+    <filter id="innerGlow">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="blur"/>
+      <feOffset dx="0" dy="2" result="offsetBlur"/>
+      <feComposite in="SourceGraphic" in2="offsetBlur" operator="over"/>
+    </filter>
+
+    <!-- 眼睛中的星光 -->
+    <filter id="sparkle">
+      <feGaussianBlur stdDeviation="0.8"/>
+    </filter>
+  </defs>
+
+  <!-- ========== 背景 ========== -->
+  <rect width="500" height="600" rx="16" fill="#F0E8DC"/>
+  <!-- 背景装饰圆 -->
+  <circle cx="70" cy="80" r="40" fill="#E8DDD0" opacity="0.5"/>
+  <circle cx="430" cy="520" r="60" fill="#E8DDD0" opacity="0.5"/>
+  <circle cx="450" cy="90" r="25" fill="#E8DDD0" opacity="0.4"/>
+  <circle cx="50" cy="500" r="30" fill="#E8DDD0" opacity="0.4"/>
+
+  <!-- ============================================ -->
+  <!-- ========== 身体部分（底层）========== -->
+  <!-- ============================================ -->
+
+  <!-- 尾巴 -->
+  <path d="M 380 430 Q 450 440 455 400 Q 458 375 440 370 Q 420 368 405 390"
+        fill="#CC1A1A" stroke="#991010" stroke-width="1.5"/>
+  <circle cx="442" cy="380" r="8" fill="#E83030" stroke="#991010" stroke-width="1.5"/>
+  <circle cx="444" cy="377" r="3" fill="#FF9999" opacity="0.5"/>
+
+  <!-- 左腿 -->
+  <ellipse cx="175" cy="530" rx="52" ry="32" fill="#FFFFFF" stroke="#D0D0D0" stroke-width="1.5" filter="url(#shadow)"/>
+  <!-- 左腿高光 -->
+  <ellipse cx="168" cy="522" rx="18" ry="10" fill="#FFFFFF" opacity="0.9"/>
+
+  <!-- 右腿 -->
+  <ellipse cx="325" cy="530" rx="52" ry="32" fill="#FFFFFF" stroke="#D0D0D0" stroke-width="1.5" filter="url(#shadow)"/>
+  <!-- 右腿高光 -->
+  <ellipse cx="318" cy="522" rx="18" ry="10" fill="#FFFFFF" opacity="0.9"/>
+
+  <!-- 身体主体（蓝色） -->
+  <ellipse cx="250" cy="420" rx="120" ry="130" fill="url(#bodyBlue)" filter="url(#shadow)"/>
+
+  <!-- 身体轮廓 -->
+  <ellipse cx="250" cy="420" rx="120" ry="130" fill="none" stroke="#134B6F" stroke-width="3"/>
+
+  <!-- ============================================ -->
+  <!-- ========== 头部（上层）========== -->
+  <!-- ============================================ -->
+
+  <!-- 头部主体 -->
+  <circle cx="250" cy="195" r="155" fill="url(#headBlue)" filter="url(#shadow)"/>
+
+  <!-- 头部轮廓 -->
+  <circle cx="250" cy="195" r="155" fill="none" stroke="#134B6F" stroke-width="3.5"/>
+
+  <!-- 头部高光（左上） -->
+  <ellipse cx="200" cy="140" rx="55" ry="35" fill="#FFFFFF" opacity="0.08" transform="rotate(-20 200 140)"/>
+
+  <!-- ============================================ -->
+  <!-- ========== 白色脸部 ========== -->
+  <!-- ============================================ -->
+
+  <!-- 脸部白色区域（下半部分大椭圆） -->
+  <ellipse cx="250" cy="235" rx="120" ry="118" fill="#FFFFFF"/>
+
+  <!-- 脸部白色区域（上半部分，延伸到眼睛上方） -->
+  <ellipse cx="250" cy="177" rx="123" ry="92" fill="#FFFFFF"/>
+
+  <!-- 白色脸部与蓝色交界线 -->
+  <path d="M 130 200 Q 145 170 165 162 Q 185 155 200 154 Q 215 153 230 156 Q 248 160 250 160
+           Q 252 160 270 156 Q 285 153 300 154 Q 315 155 335 162 Q 355 170 370 200"
+        fill="none" stroke="#A0C8E0" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- 脸部倒三角区域（眼下到嘴巴上方）的微调高光 -->
+  <ellipse cx="250" cy="210" rx="70" ry="55" fill="#FFFFFF" opacity="0.4"/>
+
+  <!-- ============================================ -->
+  <!-- ========== 左眼 ========== -->
+  <!-- ============================================ -->
+
+  <!-- 左眼外轮廓 -->
+  <ellipse cx="185" cy="175" rx="28" ry="34" fill="#FFFFFF" stroke="#2A2A2A" stroke-width="2.5"/>
+
+  <!-- 左眼睫毛/上眼线加粗 -->
+  <path d="M 157 175 Q 165 145 185 141 Q 205 147 213 175"
+        fill="none" stroke="#2A2A2A" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- 左眼瞳孔 -->
+  <ellipse cx="190" cy="177" rx="11" ry="15" fill="#111111"/>
+
+  <!-- 左眼瞳孔光晕 -->
+  <ellipse cx="191" cy="175" rx="7" ry="10" fill="#2A2A2A"/>
+
+  <!-- 左眼第一高光（大） -->
+  <circle cx="196" cy="168" r="5.5" fill="#FFFFFF" filter="url(#sparkle)"/>
+
+  <!-- 左眼第二高光（小） -->
+  <circle cx="187" cy="173" r="2.5" fill="#FFFFFF" opacity="0.7"/>
+
+  <!-- ============================================ -->
+  <!-- ========== 右眼 ========== -->
+  <!-- ============================================ -->
+
+  <!-- 右眼外轮廓 -->
+  <ellipse cx="315" cy="175" rx="28" ry="34" fill="#FFFFFF" stroke="#2A2A2A" stroke-width="2.5"/>
+
+  <!-- 右眼睫毛/上眼线加粗 -->
+  <path d="M 287 175 Q 295 145 315 141 Q 335 147 343 175"
+        fill="none" stroke="#2A2A2A" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- 右眼瞳孔 -->
+  <ellipse cx="310" cy="177" rx="11" ry="15" fill="#111111"/>
+
+  <!-- 右眼瞳孔光晕 -->
+  <ellipse cx="309" cy="175" rx="7" ry="10" fill="#2A2A2A"/>
+
+  <!-- 右眼第一高光（大） -->
+  <circle cx="304" cy="168" r="5.5" fill="#FFFFFF" filter="url(#sparkle)"/>
+
+  <!-- 右眼第二高光（小） -->
+  <circle cx="313" cy="173" r="2.5" fill="#FFFFFF" opacity="0.7"/>
+
+  <!-- ============================================ -->
+  <!-- ========== 鼻子 ========== -->
+  <!-- ============================================ -->
+
+  <!-- 鼻子主圆 -->
+  <circle cx="250" cy="210" r="16" fill="url(#noseRed)"/>
+
+  <!-- 鼻子轮廓 -->
+  <circle cx="250" cy="210" r="16" fill="none" stroke="#800000" stroke-width="1.2"/>
+
+  <!-- 鼻子高光 -->
+  <ellipse cx="258" cy="203" rx="6" ry="4" fill="#FFAAAA" opacity="0.5" transform="rotate(-15 258 203)"/>
+
+  <!-- 鼻子小高光点 -->
+  <circle cx="260" cy="202" r="2" fill="#FFDDDD" opacity="0.6"/>
+
+  <!-- ============================================ -->
+  <!-- ========== 人中线条 ========== -->
+  <!-- ============================================ -->
+
+  <line x1="250" y1="226" x2="250" y2="252" stroke="#666" stroke-width="2.2" stroke-linecap="round"/>
+
+  <!-- ============================================ -->
+  <!-- ========== 嘴巴 ========== -->
+  <!-- ============================================ -->
+
+  <!-- 嘴巴外弧线 -->
+  <path d="M 178 260 Q 250 308 322 260" fill="none" stroke="#444" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- 嘴巴内部填充 -->
+  <path d="M 180 260 Q 250 302 320 260 Q 250 290 180 260 Z" fill="url(#mouthInner)"/>
+
+  <!-- 舌头 -->
+  <ellipse cx="250" cy="284" rx="35" ry="12" fill="#E86060" opacity="0.7"/>
+
+  <!-- 嘴巴内高光 -->
+  <path d="M 210 267 Q 250 278 290 267" fill="none" stroke="#FF9999" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+
+  <!-- 嘴巴两端小弧度 -->
+  <circle cx="180" cy="258" r="2.5" fill="#555"/>
+  <circle cx="320" cy="258" r="2.5" fill="#555"/>
+
+  <!-- ============================================ -->
+  <!-- ========== 胡须 ========== -->
+  <!-- ============================================ -->
+
+  <!-- 左侧三根胡须 -->
+  <g stroke="#555" stroke-width="2.2" stroke-linecap="round">
+    <!-- 左上 -->
+    <line x1="105" y1="190" x2="150" y2="208"/>
+    <!-- 左中 -->
+    <line x1="98" y1="218" x2="148" y2="225"/>
+    <!-- 左下 -->
+    <line x1="105" y1="248" x2="150" y2="242"/>
+  </g>
+
+  <!-- 右侧三根胡须 -->
+  <g stroke="#555" stroke-width="2.2" stroke-linecap="round">
+    <!-- 右上 -->
+    <line x1="395" y1="190" x2="350" y2="208"/>
+    <!-- 右中 -->
+    <line x1="402" y1="218" x2="352" y2="225"/>
+    <!-- 右下 -->
+    <line x1="395" y1="248" x2="350" y2="242"/>
+  </g>
+
+  <!-- ============================================ -->
+  <!-- ========== 项圈 ========== -->
+  <!-- ============================================ -->
+
+  <!-- 项圈主体 -->
+  <path d="M 95 308 Q 112 295 135 295 Q 200 350 250 355 Q 300 350 365 295 Q 388 295 405 308
+           L 408 320 Q 395 330 250 365 Q 105 330 92 320 Z"
+        fill="url(#collarRed)" stroke="#7A0D0D" stroke-width="1.5"/>
+
+  <!-- 项圈上方高光线 -->
+  <path d="M 100 308 Q 115 298 140 300 Q 200 348 250 352 Q 300 348 360 300 Q 385 298 400 308"
+        fill="none" stroke="#FF6666" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+
+  <!-- 项圈缝线 -->
+  <path d="M 115 308 Q 200 353 250 357 Q 300 353 385 308"
+        fill="none" stroke="#991010" stroke-width="1" stroke-dasharray="4 4" opacity="0.6"/>
+
+  <!-- ============================================ -->
+  <!-- ========== 铃铛 ========== -->
+  <!-- ============================================ -->
+
+  <!-- 铃铛吊环 -->
+  <circle cx="250" cy="310" r="7" fill="none" stroke="#B8970B" stroke-width="3"/>
+  <circle cx="250" cy="310" r="7" fill="none" stroke="#E6C200" stroke-width="1.5" opacity="0.5"/>
+
+  <!-- 铃铛吊环连接 -->
+  <rect x="246" y="316" width="8" height="5" rx="2" fill="#E6C200" stroke="#B8970B" stroke-width="0.8"/>
+
+  <!-- 铃铛主体 -->
+  <circle cx="250" cy="340" r="22" fill="url(#bellGold)" stroke="#A8870B" stroke-width="2"/>
+
+  <!-- 铃铛中间缝隙 -->
+  <line x1="230" y1="340" x2="270" y2="340" stroke="#A8870B" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- 铃铛缝隙下方 -->
+  <path d="M 235 340 Q 250 352 265 340" fill="none" stroke="#A8870B" stroke-width="1.5" stroke-linecap="round"/>
+
+  <!-- 铃铛底部音孔 -->
+  <circle cx="250" cy="350" r="4" fill="none" stroke="#A8870B" stroke-width="2"/>
+
+  <!-- 铃铛高光大块 -->
+  <ellipse cx="242" cy="330" rx="7" ry="5" fill="url(#bellHighlight)" transform="rotate(-30 242 330)"/>
+
+  <!-- 铃铛高光小点 -->
+  <circle cx="239" cy="326" r="2.5" fill="#FFFFFF" opacity="0.7"/>
+
+  <!-- 铃铛纹路 -->
+  <path d="M 233 325 Q 250 318 267 325" fill="none" stroke="#FFF8CC" stroke-width="1" opacity="0.4"/>
+
+  <!-- ============================================ -->
+  <!-- ========== 身体细节 ========== -->
+  <!-- ============================================ -->
+
+  <!-- 白色肚皮 -->
+  <ellipse cx="250" cy="435" rx="80" ry="90" fill="url(#bellyWhite)"/>
+
+  <!-- 肚皮轮廓 -->
+  <ellipse cx="250" cy="435" rx="80" ry="90" fill="none" stroke="#D5D5D5" stroke-width="2"/>
+
+  <!-- 肚皮高光 -->
+  <ellipse cx="235" cy="415" rx="30" ry="25" fill="#FFFFFF" opacity="0.7"/>
+
+  <!-- ============================================ -->
+  <!-- ========== 四次元口袋 ========== -->
+  <!-- ============================================ -->
+
+  <!-- 口袋主体 -->
+  <path d="M 195 430 Q 190 460 192 475 L 250 500 L 308 475 Q 310 460 305 430 Z"
+        fill="url(#pocketGrad)" stroke="#C0C0C0" stroke-width="2.5" stroke-linejoin="round"/>
+
+  <!-- 口袋上方半圆弧 -->
+  <path d="M 195 430 Q 250 415 305 430" fill="none" stroke="#C0C0C0" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- 口袋内阴影 -->
+  <path d="M 200 435 Q 250 460 300 435 Q 250 470 200 435 Z" fill="#D8D8D8" opacity="0.5"/>
+
+  <!-- 口袋缝线 -->
+  <path d="M 200 438 Q 250 465 300 438" fill="none" stroke="#B0B0B0" stroke-width="0.8" stroke-dasharray="3 3"/>
+
+  <!-- 口袋装饰线条 -->
+  <path d="M 192 478 L 250 503 L 308 478" fill="none" stroke="#B0B0B0" stroke-width="1" opacity="0.5"/>
+
+  <!-- ============================================ -->
+  <!-- ========== 左手臂 ========== -->
+  <!-- ============================================ -->
+
+  <!-- 左臂（蓝色） -->
+  <path d="M 135 355 Q 90 370 75 395 Q 65 410 70 420 Q 80 430 95 425 Q 110 420 120 408 Q 130 395 135 380 Z"
+        fill="url(#bodyBlue)" stroke="#134B6F" stroke-width="2.2" stroke-linejoin="round"/>
+
+  <!-- 左手（白色圆形） -->
+  <circle cx="78" cy="420" r="22" fill="#FFFFFF" stroke="#D0D0D0" stroke-width="2"/>
+
+  <!-- 左手高光 -->
+  <circle cx="72" cy="414" r="7" fill="#FFFFFF" opacity="0.8"/>
+
+  <!-- ============================================ -->
+  <!-- ========== 右手臂 ========== -->
+  <!-- ============================================ -->
+
+  <!-- 右臂（蓝色） -->
+  <path d="M 365 355 Q 410 370 425 395 Q 435 410 430 420 Q 420 430 405 425 Q 390 420 380 408 Q 370 395 365 380 Z"
+        fill="url(#bodyBlue)" stroke="#134B6F" stroke-width="2.2" stroke-linejoin="round"/>
+
+  <!-- 右手（白色圆形） -->
+  <circle cx="422" cy="420" r="22" fill="#FFFFFF" stroke="#D0D0D0" stroke-width="2"/>
+
+  <!-- 右手高光 -->
+  <circle cx="416" cy="414" r="7" fill="#FFFFFF" opacity="0.8"/>
+
+  <!-- ============================================ -->
+  <!-- ========== 右手拿道具（铜锣烧）========== -->
+  <!-- ============================================ -->
+
+  <!-- 铜锣烧主体 -->
+  <ellipse cx="430" cy="405" rx="18" ry="12" fill="#E8B960" stroke="#C89840" stroke-width="1.5" transform="rotate(-20 430 405)"/>
+
+  <!-- 铜锣烧上层皮 -->
+  <ellipse cx="430" cy="400" rx="18" ry="8" fill="#F0C878" stroke="#C89840" stroke-width="1.2" transform="rotate(-20 430 400)"/>
+
+  <!-- 铜锣烧高光 -->
+  <ellipse cx="425" cy="396" rx="6" ry="3" fill="#FFF8DC" opacity="0.5" transform="rotate(-20 425 396)"/>
+
+  <!-- ============================================ -->
+  <!-- ========== 脸部装饰细节 ========== -->
+  <!-- ============================================ -->
+
+  <!-- 左眉毛 -->
+  <path d="M 170 148 Q 180 142 195 146" fill="none" stroke="#2A2A2A" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- 右眉毛 -->
+  <path d="M 330 148 Q 320 142 305 146" fill="none" stroke="#2A2A2A" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- 两颊腮红 -->
+  <ellipse cx="155" cy="225" rx="14" ry="10" fill="#FFB3B3" opacity="0.35"/>
+  <ellipse cx="345" cy="225" rx="14" ry="10" fill="#FFB3B3" opacity="0.35"/>
+
+  <!-- 头顶蓝色部分的微妙渐变纹理 -->
+  <circle cx="250" cy="195" r="155" fill="none" stroke="#4DA8DA" stroke-width="1" opacity="0.3"/>
+  <circle cx="250" cy="195" r="100" fill="none" stroke="#4DA8DA" stroke-width="0.8" opacity="0.2"/>
+
+  <!-- ============================================ -->
+  <!-- ========== 身体拼接缝线 ========== -->
+  <!-- ============================================ -->
+
+  <!-- 身体侧面缝线 -->
+  <path d="M 140 370 Q 132 420 145 480" fill="none" stroke="#4DA8DA" stroke-width="1.5" stroke-dasharray="5 4" opacity="0.5"/>
+  <path d="M 360 370 Q 368 420 355 480" fill="none" stroke="#4DA8DA" stroke-width="1.5" stroke-dasharray="5 4" opacity="0.5"/>
+
+</svg>

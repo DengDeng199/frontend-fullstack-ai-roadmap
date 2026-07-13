@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <canvas id="gl" width="400" height="400"></canvas>
+    <script>
+        const canvas = document.getElementById('gl');
+        const gl = canvas.getContext('webgl');
+        if (!gl) throw new Error('当前浏览器不支持 WebGL');
+
+        // 1. 顶点着色器源码
+        const vsSource = `
+            attribute vec2 aPosition;
+            void main() {
+                gl_Position = vec4(aPosition, 0.0, 1.0); // 裁剪空间坐标
+            }
+        `;
+        // 2. 片段着色器源码
+          const fsSource = `
+            precision mediump float;
+            void main() {
+            gl_FragColor = vec4(0.2, 0.6, 1.0, 1.0); // RGBA 蓝色
+            }
+        `;
+        // 3. 编译着色器
+        function createShader(gl, type, source){
+            const shader = gl.createShader(type);
+            gl.shaderSource
+        }
+    </script>
+</body>
+
+</html> 
