@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>D3.js 高级交互 — Zoom 缩放 · Brush 刷选 · 拖拽排序</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      background: #0c1222;
+      color: #cdd6e8;
+      min-height: 100vh;
+      padding: 24px;
+    }
+    h1 {
+      text-align: center;
+      font-size: 28px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #ff6b6b, #ffb454);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .subtitle {
+      text-align: center;
+      font-size: 13px;
+      color: #5a6f8a;
+      margin-bottom: 24px;
+    }
+
+    .dashboard {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(460px, 1fr));
+      gap: 20px;
+      max-width: 1300px;
+      margin: 0 auto;
+    }
+    .card {
+      background: #111827;
+      border: 1px solid #1e2d45;
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .card.full { grid-column: 1 / -1; }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .card-title {
+      font-size: 15px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-badge {
+      font-size: 11px;
+      padding: 2px 10px;
+      border-radius: 20px;
+      background: #1a2d50;
+      color: #ffb454;
+      border: 1px solid #2a4a7a;
+    }
+    .btn-group { display: flex; gap: 6px; }
+    .btn {
+      padding: 5px 14px;
+      border: 1px solid #2a4a7a;
+      border-radius: 6px;
+      background: transparent;
+      color: #8ba0c0;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    .btn:hover { background: #1a2d50; color: #cdd6e8; }
+    .btn.active { background: #2a4a7a; color: #fff; border-color: #ffb454; }
+    svg { display: block; width: 100%; border-radius: 8px; overflow: hidden; }
+
+    .tip {
+      margin-top: 12px;
+      font-size: 11px;
+      color: #5a6f8a;
+      line-height: 1.6;
+      padding: 10px;
+      background: #0d1525;
+      border-radius: 6px;
+      border-left: 3px solid #ffb454;
+    }
+    .tip code {
+      color: #00d4c8;
+      background: #1a2d50;
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-size: 11px;
+    }
+
+    /* Brush 选区样式 */
+    .brush .selection { fill: #4f9dff; fill-opacity: 0.15; stroke: #4f9dff; stroke-width: 1.5px; }
+    .brush .handle { fill: #4f9dff; }
+
+    /* Zoom 光标 */
+    .zoom-area { cursor: grab; }
+    .zoom-area:active { cursor: grabbing; }
+
+    /* 拖拽排序 */
+    .drag-handle { cursor: grab; }
+    .drag-handle:active { cursor: grabbing; }
+  </style>
+</head>
+<body>
+
+<h1>高级交互专题</h1>
+<p class="subtitle">d3.zoom · d3.brush · d3.drag · 联动交互 · 事件处理</p>
+
+<div class="dashboard">
+
+  <!-- ====== 案例一：Zoom 缩放 + 平移 ====== -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">
+        Zoom 缩放 & 平移
+        <span class="card-badge">d3.zoom</span>
+        <span class="card-badge">transform</span>
+        <span class="card-badge">滚轮/拖拽</span>
+      </span>
+      <div class="btn-group">
+        <button class="btn active" data-zoom="reset">重置视图</button>
+        <button class="btn" data-zoom="fit">适应窗口</button>
+      </div>
+    </div>
+    <div id="zoom-container"></div>
+    <div class="tip">
+      <strong>知识点：</strong>
+      ① <code>d3.zoom()</code> 创建缩放行为，监听 wheel（滚轮）和 drag（拖拽平移）；
+      ② <code>.scaleExtent([0.5, 5])</code> 限制缩放范围；
+      ③ <code>.on('zoom', (e) => g.attr('transform', e.transform))</code> — zoom 事件返回 transform 对象，直接设给 group；
+      ④ <strong>用法：</strong>鼠标滚轮缩放，按住拖动平移。
+    </div>
+  </div>
+
+  <!-- ====== 案例二：Brush 刷选联动 ====== -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">
+        Brush 刷选 + 联动
+        <span class="card-badge">d3.brush</span>
+        <span class="card-badge">brushX</span>
+        <span class="card-badge">联动高亮</span>
+      </span>
+      <div class="btn-group">
+        <button class="btn active" data-brush="clear">清除选区</button>
+      </div>
+    </div>
+    <div id="brush-container"></div>
+    <div class="tip">
+      <strong>知识点：</strong>
+      ① <code>d3.brushX()</code> 创建 X 轴刷选工具（另有 <code>brushY</code> 和 <code>brush</code> 二维）；
+      ② <code>.extent([[0,0],[w,40]])</code> 设定刷选手柄的活动区域；
+      ③ <code>.on('brush end', fn)</code> — brush 事件中通过 <code>e.selection</code>（[x0,x1]）拿到选区范围；
+      ④ 选区范围反查比例尺数据域，实现<strong>上选区 → 下散点图联动高亮</strong>。
+    </div>
+  </div>
+
+  <!-- ====== 案例三：拖拽排序柱状图 ====== -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">
+        拖拽排序柱状图
+        <span class="card-badge">d3.drag</span>
+        <span class="card-badge">自定义排序</span>
+      </span>
+      <div class="btn-group">
+        <button class="btn active" data-sort="value-desc">数值降序</button>
+        <button class="btn" data-sort="value-asc">数值升序</button>
+        <button class="btn" data-sort="alpha">字母序</button>
+      </div>
+    </div>
+    <div id="drag-container"></div>
+    <div class="tip">
+      <strong>知识点：</strong>
+      ① <code>d3.drag()</code> 不是力导图专用——可绑定到任意元素；
+      ② 拖拽时动态更新 x 坐标和数据索引，松手时重新排列数组并动画过渡；
+      ③ 本质是 <strong>拖拽改数据顺序 → 数据变化触发布局重算 → transition 平滑过渡</strong>。
+    </div>
+  </div>
+
+  <!-- ====== 案例四：时间轴联动（Zoom + Brush 组合） ====== -->
+  <div class="card full">
+    <div class="card-header">
+      <span class="card-title">
+        时间轴缩放联动
+        <span class="card-badge">d3.zoom</span>
+        <span class="card-badge">d3.brushX</span>
+        <span class="card-badge">组合交互</span>
+      </span>
+      <div class="btn-group">
+        <button class="btn active" data-timeline="reset">重置</button>
+        <button class="btn" data-timeline="last7">最近7天</button>
+        <button class="btn" data-timeline="last30">最近30天</button>
+      </div>
+    </div>
+    <div id="timeline-container"></div>
+    <div class="tip">
+      <strong>知识点：</strong>
+      ① 上图为 overview（全景），用 <code>d3.brushX</code> 选时间区间；
+      ② 下图为 detail（细节），展示选区内的数据放大视图；
+      ③ brush 选区的 <code>e.selection</code>（像素值） → 反查 <code>xScale.invert()</code> 得数据域 → 更新下图的 scale.domain → 过渡动画；
+      ④ 这是 <strong>Focus+Context</strong> 视觉范式，金融/监控大屏常用。
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ==================== 共享 ====================
+  const margin = { top: 10, right: 20, bottom: 35, left: 45 };
+
+  // ==================== 案例一：Zoom 缩放 + 平移 ====================
+  (function () {
+    const container = document.getElementById('zoom-container');
+    const width = container.clientWidth;
+    const height = 380;
+    container.innerHTML = `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMid meet" class="zoom-area"></svg>`;
+    const svg = d3.select('#zoom-container svg');
+
+    // 所有绘图元素放在一个 g 里，zoom 只变换这个 g
+    const g = svg.append('g');
+
+    // 绘制 50 个随机点组成的网络
+    const nodes = d3.range(50).map(() => ({
+      x: Math.random() * 800,
+      y: Math.random() * 500,
+      r: Math.random() * 12 + 3,
+    }));
+
+    // 随机连线
+    const links = [];
+    for (let i = 0; i < 60; i++) {
+      links.push({
+        source: nodes[Math.floor(Math.random() * nodes.length)],
+        target: nodes[Math.floor(Math.random() * nodes.length)],
+      });
+    }
+
+    g.append('g').selectAll('line')
+      .data(links).join('line')
+      .attr('x1', d => d.source.x).attr('y1', d => d.source.y)
+      .attr('x2', d => d.target.x).attr('y2', d => d.target.y)
+      .attr('stroke', '#1e3050').attr('stroke-width', 0.8);
+
+    const nodeG = g.append('g').selectAll('g')
+      .data(nodes).join('g')
+      .attr('transform', d => `translate(${d.x},${d.y})`);
+
+    nodeG.append('circle')
+      .attr('r', d => d.r)
+      .attr('fill', d => {
+        const t = d.r / 15;
+        return d3.interpolateRdYlBu(1 - t);
+      })
+      .attr('stroke', '#111827').attr('stroke-width', 1.5);
+
+    nodeG.append('text')
+      .text((d, i) => i)
+      .attr('text-anchor', 'middle').attr('dy', '0.35em')
+      .attr('font-size', '9px').attr('fill', '#111827')
+      .style('pointer-events', 'none');
+
+    // === Zoom 行为 ===
+    const zoom = d3.zoom()
+      .scaleExtent([0.5, 5])
+      .on('zoom', (event) => {
+        g.attr('transform', event.transform);
+      });
+
+    svg.call(zoom);
+
+    // 按钮
+    document.querySelectorAll('[data-zoom]').forEach(btn => {
+      btn.onclick = function () {
+        document.querySelectorAll('[data-zoom]').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        if (this.dataset.zoom === 'reset') {
+          svg.transition().duration(500).call(zoom.transform, d3.zoomIdentity);
+        } else if (this.dataset.zoom === 'fit') {
+          svg.transition().duration(500)
+            .call(zoom.transform, d3.zoomIdentity.translate(50, 20).scale(1.3));
+        }
+      };
+    });
+
+    // 初始适配
+    svg.call(zoom.transform, d3.zoomIdentity.translate(30, 20).scale(width / 900));
+  })();
+
+  // ==================== 案例二：Brush 刷选联动 ====================
+  (function () {
+    const container = document.getElementById('brush-container');
+    const width = container.clientWidth;
+    const height = 380;
+    const innerH = height - margin.top - margin.bottom;
+    container.innerHTML = `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMid meet"></svg>`;
+    const svg = d3.select('#brush-container svg');
+
+    const gUpper = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+    const gLower = svg.append('g').attr('transform', `translate(${margin.left},${margin.top + 30})`);
+
+    // 生成 100 个数据点
+    const data = d3.range(100).map(i => ({
+      x: i * 10,
+      y: 20 + Math.sin(i * 0.2) * 15 + Math.random() * 10,
+    }));
+
+    // 上部分：折线图（窄）
+    const innerW = width - margin.left - margin.right;
+    const upperH = 30;
+    const lowerH = innerH - upperH - 10;
+
+    const xScale = d3.scaleLinear().domain([0, 990]).range([0, innerW]);
+    const yUpper = d3.scaleLinear().domain([0, 50]).range([upperH, 0]);
+    const yLower = d3.scaleLinear().domain([0, 50]).range([lowerH, 0]);
+
+    // 上部分线条
+    const lineUpper = d3.line().x(d => xScale(d.x)).y(d => yUpper(d.y)).curve(d3.curveMonotoneX);
+    gUpper.append('path').datum(data).attr('d', lineUpper)
+      .attr('fill', 'none').attr('stroke', '#4f9dff').attr('stroke-width', 1.5);
+    gUpper.append('g').attr('class', 'axis').attr('transform', `translate(0,${upperH})`)
+      .call(d3.axisBottom(xScale).ticks(6));
+
+    // 下部分线条
+    const lineLower = d3.line().x(d => xScale(d.x)).y(d => yLower(d.y)).curve(d3.curveMonotoneX);
+    gLower.append('path').datum(data).attr('d', lineLower)
+      .attr('fill', 'none').attr('stroke', '#4f9dff').attr('stroke-width', 2);
+    gLower.append('g').attr('class', 'axis').attr('transform', `translate(0,${lowerH})`)
+      .call(d3.axisBottom(xScale).ticks(8));
+    gLower.append('g').attr('class', 'axis').call(d3.axisLeft(yLower).ticks(4));
+
+    // Brush 行为
+    const brush = d3.brushX()
+      .extent([[0, 0], [innerW, upperH]])
+      .on('brush', (event) => {
+        const sel = event.selection;
+        if (sel) {
+          const [x0, x1] = sel.map(xScale.invert);
+          const filtered = data.filter(d => d.x >= x0 && d.x <= x1);
+
+          // 下部分数据点高亮
+          gLower.selectAll('circle')
+            .data(filtered, d => d.x)
+            .join(
+              enter => enter.append('circle')
+                .attr('cx', d => xScale(d.x))
+                .attr('cy', d => yLower(d.y))
+                .attr('r', 0)
+                .attr('fill', '#ffb454')
+                .call(e => e.transition().duration(200).attr('r', 4)),
+              update => update.transition().duration(200)
+                .attr('cx', d => xScale(d.x))
+                .attr('cy', d => yLower(d.y)),
+              exit => exit.transition().duration(200).attr('r', 0).remove()
+            );
+
+          // 非选中点低透明
+          gLower.selectAll('circle').filter(d => d.x < x0 || d.x > x1)
+            .transition().duration(200)
+            .attr('fill', '#4f9dff').attr('fill-opacity', 0.25);
+          gLower.selectAll('circle').filter(d => d.x >= x0 && d.x <= x1)
+            .transition().duration(200)
+            .attr('fill', '#ffb454').attr('fill-opacity', 1);
+        } else {
+          gLower.selectAll('circle').transition().duration(200).attr('fill-opacity', 0.25);
+        }
+      })
+      .on('end', (event) => {
+        if (!event.selection) {
+          gLower.selectAll('circle').remove();
+        }
+      });
+
+    const brushG = gUpper.append('g').attr('class', 'brush').call(brush);
+
+    // 按钮
+    document.querySelector('[data-brush="clear"]').onclick = function () {
+      brushG.call(brush.move, null);
+    };
+
+    // 初始画散点
+    gLower.selectAll('circle').data(data).join('circle')
+      .attr('cx', d => xScale(d.x)).attr('cy', d => yLower(d.y))
+      .attr('r', 2.5).attr('fill', '#4f9dff').attr('fill-opacity', 0.3);
+  })();
+
+  // ==================== 案例三：拖拽排序柱状图 ====================
+  (function () {
+    const container = document.getElementById('drag-container');
+    const width = container.clientWidth;
+    const height = 380;
+    const innerW = width - margin.left - margin.right;
+    const innerH = height - margin.top - margin.bottom;
+    container.innerHTML = `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMid meet"></svg>`;
+    const svg = d3.select('#drag-container svg');
+    const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
+    let data = [
+      { name: '监测站A', value: 85 },
+      { name: '监测站B', value: 62 },
+      { name: '监测站C', value: 73 },
+      { name: '监测站D', value: 91 },
+      { name: '监测站E', value: 45 },
+      { name: '监测站F', value: 58 },
+    ];
+
+    const colors = ['#4f9dff', '#00d4c8', '#ffb454', '#ff5d85', '#a78bfa', '#34d399'];
+
+    const xScale = d3.scaleBand().range([0, innerW]).padding(0.25);
+    const yScale = d3.scaleLinear().range([innerH, 0]);
+
+    g.append('g').attr('class', 'axis').attr('transform', `translate(0,${innerH})`);
+    g.append('g').attr('class', 'axis');
+    g.append('g').attr('class', 'grid');
+
+    let draggedIndex = -1, startX = 0, barWidth = 0;
+
+    function render(d, animate = true) {
+      xScale.domain(d.map(d => d.name));
+      yScale.domain([0, d3.max(d, d => d.value) * 1.15]);
+      barWidth = xScale.bandwidth();
+
+      g.select('.axis:last-of-type').transition().duration(animate ? 300 : 0).call(d3.axisBottom(xScale));
+      g.select('.grid').transition().duration(animate ? 300 : 0)
+        .call(d3.axisLeft(yScale).ticks(5).tickSize(-innerW).tickFormat(''));
+
+      const bars = g.selectAll('.drag-bar').data(d, d => d.name);
+
+      bars.exit().transition().duration(300).attr('height', 0).attr('y', innerH).remove();
+
+      const enterBars = bars.enter().append('rect')
+        .attr('class', 'drag-bar drag-handle')
+        .attr('rx', 4)
+        .attr('fill', (d, i) => colors[i % colors.length])
+        .attr('y', innerH).attr('height', 0)
+        // 拖拽行为
+        .call(d3.drag()
+          .on('start', function (event, d) {
+            draggedIndex = data.indexOf(d);
+            startX = event.x;
+            d3.select(this).attr('fill', '#ffb454').attr('stroke', '#fff').attr('stroke-width', 2);
+          })
+          .on('drag', function (event, d) {
+            const dx = event.x - startX;
+            d3.select(this).attr('x', xScale(d.name) + dx);
+            // 计算拖拽到哪个位置
+            const targetIdx = Math.round(dx / (barWidth + xScale.step() - barWidth));
+            const newIdx = Math.max(0, Math.min(data.length - 1, draggedIndex + targetIdx));
+            if (newIdx !== draggedIndex) {
+              // 交换位置
+              const item = data.splice(draggedIndex, 1)[0];
+              data.splice(newIdx, 0, item);
+              draggedIndex = newIdx;
+              render(data, false);
+              startX = event.x;
+            }
+          })
+          .on('end', function () {
+            d3.select(this).attr('stroke', 'none');
+            render(data, true);
+          })
+        );
+
+      enterBars.merge(bars)
+        .transition().duration(animate ? 500 : 0)
+        .attr('x', d => xScale(d.name))
+        .attr('y', d => yScale(d.value))
+        .attr('width', barWidth)
+        .attr('height', d => innerH - yScale(d.value))
+        .attr('fill', (d, i) => colors[i % colors.length]);
+
+      // 标签
+      const labels = g.selectAll('.drag-label').data(d, d => d.name);
+      labels.exit().remove();
+      const enterLabels = labels.enter().append('text')
+        .attr('class', 'drag-label')
+        .attr('text-anchor', 'middle').attr('font-size', '11px').attr('fill', '#8ba0c0')
+        .style('pointer-events', 'none');
+      enterLabels.merge(labels).transition().duration(animate ? 500 : 0)
+        .attr('x', d => xScale(d.name) + barWidth / 2)
+        .attr('y', d => yScale(d.value) - 8)
+        .text(d => d.value);
+    }
+
+    render(data, false);
+
+    // 排序按钮
+    document.querySelectorAll('[data-sort]').forEach(btn => {
+      btn.onclick = function () {
+        document.querySelectorAll('[data-sort]').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        const action = this.dataset.sort;
+        let sorted = [...data];
+        if (action === 'value-desc') sorted.sort((a, b) => b.value - a.value);
+        else if (action === 'value-asc') sorted.sort((a, b) => a.value - b.value);
+        else if (action === 'alpha') sorted.sort((a, b) => a.name.localeCompare(b.name));
+        data = sorted;
+        render(data, true);
+      };
+    });
+  })();
+
+  // ==================== 案例四：时间轴联动 ====================
+  (function () {
+    const container = document.getElementById('timeline-container');
+    const width = container.clientWidth;
+    const height = 420;
+    const topH = 80, gap = 30;
+    const bottomH = height - topH - gap;
+    const innerW = width - margin.left - margin.right;
+
+    container.innerHTML = `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMid meet"></svg>`;
+    const svg = d3.select('#timeline-container svg');
+
+    // 生成 180 天的数据
+    const now = new Date();
+    const allData = d3.range(180).map(i => {
+      const d = new Date(now);
+      d.setDate(d.getDate() - (179 - i));
+      return {
+        date: d,
+        value: 50 + 20 * Math.sin(i * 0.08) + 15 * Math.sin(i * 0.04) + (Math.random() - 0.5) * 10,
+      };
+    });
+
+    let brushDomain = [allData[90].date, allData[149].date]; // 默认选中间 60 天
+
+    // 比例尺
+    const xTop = d3.scaleTime().domain([allData[0].date, allData[179].date]).range([0, innerW]);
+    const yTop = d3.scaleLinear().domain([0, d3.max(allData, d => d.value)]).range([topH, 0]);
+
+    const xBottom = d3.scaleTime().range([0, innerW]);
+    const yBottom = d3.scaleLinear().domain([0, d3.max(allData, d => d.value) * 1.1]).range([bottomH, 0]);
+
+    // === 上层 Overview ===
+    const gTop = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
+    const areaTop = d3.area().x(d => xTop(d.date)).y0(topH).y1(d => yTop(d.value)).curve(d3.curveMonotoneX);
+    gTop.append('path').datum(allData).attr('d', areaTop)
+      .attr('fill', '#1a2d50').attr('fill-opacity', 0.6);
+
+    const lineTop = d3.line().x(d => xTop(d.date)).y(d => yTop(d.value)).curve(d3.curveMonotoneX);
+    gTop.append('path').datum(allData).attr('d', lineTop)
+      .attr('fill', 'none').attr('stroke', '#4f9dff').attr('stroke-width', 1.5);
+
+    // Brush 在 overview 上
+    const brush = d3.brushX()
+      .extent([[0, 0], [innerW, topH]])
+      .on('brush end', (event) => {
+        const sel = event.selection;
+        if (sel) {
+          brushDomain = sel.map(xTop.invert);
+        } else {
+          brushDomain = [allData[0].date, allData[179].date];
+        }
+        updateDetail(true);
+      });
+
+    const brushG = gTop.append('g').attr('class', 'brush').call(brush);
+    // 初始选区
+    brushG.call(brush.move, brushDomain.map(xTop));
+
+    // 时间轴格式
+    const timeFormat = d3.timeFormat('%m-%d');
+
+    // === 下层 Detail ===
+    const gBottom = svg.append('g').attr('transform', `translate(${margin.left},${margin.top + topH + gap})`);
+    gBottom.append('g').attr('class', 'axis')
+      .attr('transform', `translate(0,${bottomH})`);
+    gBottom.append('g').attr('class', 'axis');
+
+    const lineBottom = gBottom.append('path').attr('fill', 'none').attr('stroke', '#4f9dff').attr('stroke-width', 2.5);
+    const areaBottom = gBottom.append('path')
+      .attr('fill', 'url(#detail-gradient)')
+      .attr('fill-opacity', 0.3);
+
+    // 渐变
+    svg.append('defs').append('linearGradient').attr('id', 'detail-gradient')
+      .attr('x1', '0%').attr('y1', '0%').attr('x2', '0%').attr('y2', '100%')
+      .selectAll('stop')
+      .data([{ o: 0, op: 0.3 }, { o: 1, op: 0.02 }])
+      .join('stop')
+      .attr('offset', d => d.o)
+      .attr('stop-color', '#4f9dff')
+      .attr('stop-opacity', d => d.op);
+
+    const detailLine = d3.line().x(d => xBottom(d.date)).y(d => yBottom(d.value)).curve(d3.curveMonotoneX);
+    const detailArea = d3.area().x(d => xBottom(d.date)).y0(bottomH).y1(d => yBottom(d.value)).curve(d3.curveMonotoneX);
+
+    function updateDetail(animate = false) {
+      const filtered = allData.filter(d => d.date >= brushDomain[0] && d.date <= brushDomain[1]);
+
+      xBottom.domain(brushDomain);
+      yBottom.domain([0, d3.max(filtered, d => d.value) * 1.15]);
+
+      const duration = animate ? 500 : 0;
+
+      gBottom.select('.axis:first-of-type').transition().duration(duration)
+        .call(d3.axisBottom(xBottom).ticks(6).tickFormat(timeFormat));
+      gBottom.select('.axis:last-of-type').transition().duration(duration)
+        .call(d3.axisLeft(yBottom).ticks(5));
+
+      lineBottom.datum(filtered).transition().duration(duration).attr('d', detailLine);
+      areaBottom.datum(filtered).transition().duration(duration).attr('d', detailArea);
+
+      // 数据点
+      const dots = gBottom.selectAll('circle').data(filtered);
+      dots.exit().transition().duration(duration).attr('r', 0).remove();
+      dots.enter().append('circle').attr('r', 0).attr('fill', '#ffb454').attr('stroke', '#111827').attr('stroke-width', 1)
+        .merge(dots)
+        .transition().duration(duration)
+        .attr('cx', d => xBottom(d.date))
+        .attr('cy', d => yBottom(d.value))
+        .attr('r', d => {
+          const idx = filtered.indexOf(d);
+          return idx % 7 === 0 ? 4 : 2;
+        });
+    }
+
+    updateDetail(false);
+
+    // 按钮
+    document.querySelectorAll('[data-timeline]').forEach(btn => {
+      btn.onclick = function () {
+        document.querySelectorAll('[data-timeline]').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+
+        const action = this.dataset.timeline;
+        const last = allData[179].date;
+
+        if (action === 'reset') {
+          brushDomain = [allData[0].date, last];
+        } else if (action === 'last7') {
+          const d = new Date(last);
+          d.setDate(d.getDate() - 7);
+          brushDomain = [d, last];
+        } else if (action === 'last30') {
+          const d = new Date(last);
+          d.setDate(d.getDate() - 30);
+          brushDomain = [d, last];
+        }
+        brushG.transition().duration(400).call(brush.move, brushDomain.map(xTop));
+        updateDetail(true);
+      };
+    });
+  })();
+</script>
+</body>
+</html>

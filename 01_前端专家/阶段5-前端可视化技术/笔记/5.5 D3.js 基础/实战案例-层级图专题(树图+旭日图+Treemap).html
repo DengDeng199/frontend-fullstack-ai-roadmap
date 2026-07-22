@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>D3.js 层级图专题 — 树图 · 旭日图 · Treemap</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      background: #0c1222;
+      color: #cdd6e8;
+      min-height: 100vh;
+      padding: 24px;
+    }
+    h1 {
+      text-align: center;
+      font-size: 28px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #a78bfa, #00d4c8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .subtitle {
+      text-align: center;
+      font-size: 13px;
+      color: #5a6f8a;
+      margin-bottom: 24px;
+    }
+
+    /* === Tab 切换 === */
+    .tab-bar {
+      display: flex;
+      justify-content: center;
+      gap: 4px;
+      margin-bottom: 24px;
+      background: #111827;
+      border-radius: 10px;
+      padding: 4px;
+      max-width: 480px;
+      margin-left: auto;
+      margin-right: auto;
+      border: 1px solid #1e2d45;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: #5a6f8a;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+      font-weight: 500;
+    }
+    .tab-btn:hover { color: #8ba0c0; }
+    .tab-btn.active {
+      background: #1a2d50;
+      color: #a78bfa;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+
+    /* === 卡片 === */
+    .dashboard {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .card {
+      background: #111827;
+      border: 1px solid #1e2d45;
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .card-title {
+      font-size: 15px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-badge {
+      font-size: 11px;
+      padding: 2px 10px;
+      border-radius: 20px;
+      background: #1a2d50;
+      color: #a78bfa;
+      border: 1px solid #2a4a7a;
+    }
+    .btn-group { display: flex; gap: 6px; }
+    .btn {
+      padding: 5px 14px;
+      border: 1px solid #2a4a7a;
+      border-radius: 6px;
+      background: transparent;
+      color: #8ba0c0;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    .btn:hover { background: #1a2d50; color: #cdd6e8; }
+    .btn.active { background: #2a4a7a; color: #fff; border-color: #a78bfa; }
+
+    .chart-panel { display: none; }
+    .chart-panel.active { display: block; }
+    svg { display: block; width: 100%; border-radius: 8px; overflow: hidden; }
+
+    .tip {
+      margin-top: 12px;
+      font-size: 11px;
+      color: #5a6f8a;
+      line-height: 1.6;
+      padding: 10px;
+      background: #0d1525;
+      border-radius: 6px;
+      border-left: 3px solid #a78bfa;
+    }
+    .tip code {
+      color: #00d4c8;
+      background: #1a2d50;
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-size: 11px;
+    }
+
+    /* 树图节点样式 */
+    .tree-node circle { cursor: pointer; transition: r 0.2s, fill 0.2s; }
+    .tree-node:hover > circle { filter: brightness(1.3); }
+    .tree-link { fill: none; stroke: #1e3050; stroke-width: 1.5px; stroke-linecap: round; }
+    .tree-label { font-size: 11px; fill: #8ba0c0; pointer-events: none; transition: fill 0.2s; }
+
+    /* 旭日图 tooltip */
+    .sunburst-tooltip {
+      position: absolute;
+      pointer-events: none;
+      background: #1a2d50;
+      color: #cdd6e8;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      border: 1px solid #2a4a7a;
+      opacity: 0;
+      transition: opacity 0.15s;
+      z-index: 10;
+    }
+
+    /* Treemap 样式 */
+    .treemap-cell {
+      stroke: #111827;
+      stroke-width: 2px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .treemap-cell:hover { opacity: 0.85; }
+  </style>
+</head>
+<body>
+
+<h1>层级图专题</h1>
+<p class="subtitle">d3.hierarchy · d3.tree · d3.partition · d3.treemap · 可折叠交互</p>
+
+<div class="tab-bar">
+  <button class="tab-btn active" data-tab="tree">🌳 可折叠树图</button>
+  <button class="tab-btn" data-tab="sunburst">☀️ 旭日图</button>
+  <button class="tab-btn" data-tab="treemap">▦ 矩形树图</button>
+</div>
+
+<div class="dashboard">
+  <div class="card">
+
+    <!-- ====== 树图 Panel ====== -->
+    <div class="chart-panel active" id="panel-tree">
+      <div class="card-header">
+        <span class="card-title">
+          可折叠树图
+          <span class="card-badge">d3.tree</span>
+          <span class="card-badge">d3.linkVertical</span>
+          <span class="card-badge">折叠交互</span>
+        </span>
+        <div class="btn-group">
+          <button class="btn active" data-tree-action="expand">全部展开</button>
+          <button class="btn" data-tree-action="collapse">全部折叠(仅2层)</button>
+          <button class="btn" data-tree-action="reset">重置</button>
+        </div>
+      </div>
+      <div id="tree-container"></div>
+      <div class="tip">
+        <strong>知识点：</strong>
+        ① <code>d3.hierarchy(data)</code> 把普通 JSON 转成层级节点（含 depth、parent、children）；
+        ② <code>d3.tree().size([w, h])(root)</code> 计算每个节点坐标（.x/.y）；
+        ③ <code>root.links()</code> 返回所有父子连线，<code>root.descendants()</code> 返回所有子孙节点；
+        ④ <code>d3.linkVertical()</code> 生成垂直折线路径；
+        ⑤ <strong>点击节点可折叠/展开</strong>其子树，本质是改变 <code>children</code> 引用后重新布局。
+      </div>
+    </div>
+
+    <!-- ====== 旭日图 Panel ====== -->
+    <div class="chart-panel" id="panel-sunburst">
+      <div class="card-header">
+        <span class="card-title">
+          旭日图（Sunburst）
+          <span class="card-badge">d3.partition</span>
+          <span class="card-badge">d3.arc</span>
+          <span class="card-badge">环形层级</span>
+        </span>
+        <div class="btn-group">
+          <button class="btn active" data-sunburst-action="highlight">点击高亮路径</button>
+          <button class="btn" data-sunburst-action="reset">重置</button>
+        </div>
+      </div>
+      <div id="sunburst-container" style="position:relative;"></div>
+      <div class="tip">
+        <strong>知识点：</strong>
+        ① <code>d3.hierarchy(data).sum(d => d.value)</code> — sum 调用后每个节点有 <code>.value</code>（子树值之和）；
+        ② <code>d3.partition().size([2π, radius])(root)</code> 为每个节点分配角度区间（x0-x1）和半径区间（y0-y1）；
+        ③ <code>d3.arc().startAngle/endAngle/innerRadius/outerRadius</code> 将角度+半径区间转为 SVG 弧形路径；
+        ④ <strong>内层→外层</strong> 表示层级深度，<strong>角度跨度</strong> 表示数值占比。
+      </div>
+    </div>
+
+    <!-- ====== Treemap Panel ====== -->
+    <div class="chart-panel" id="panel-treemap">
+      <div class="card-header">
+        <span class="card-title">
+          矩形树图（Treemap）
+          <span class="card-badge">d3.treemap</span>
+          <span class="card-badge">面积编码</span>
+          <span class="card-badge">钻取交互</span>
+        </span>
+        <div class="btn-group">
+          <button class="btn active" data-treemap-action="back" disabled>← 返回上级</button>
+        </div>
+      </div>
+      <div id="treemap-container"></div>
+      <div class="tip">
+        <strong>知识点：</strong>
+        ① <code>d3.treemap().size([w, h]).padding(2)(root)</code> 按数值比例递归切分矩形空间；
+        ② 每个节点被分配 <code>x0/y0/x1/y1</code> 坐标区间，直接映射为 rect 的定位；
+        ③ <code>.sum()</code> 计算子树总值，<code>.sort()</code> 控制矩形排列顺序；
+        ④ <strong>点击矩形可钻取</strong>（下钻到该分类的子节点），本质是重新设置 root 后重绘。
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // ==================== 共享数据 ====================
+  // 模拟一个设备/频段分类层级
+  const hierarchyData = {
+    name: '电磁监测系统',
+    children: [
+      {
+        name: '短波频段',
+        children: [
+          { name: '1.5-3MHz', value: 120 },
+          { name: '3-6MHz', value: 95 },
+          { name: '6-12MHz', value: 80 },
+          { name: '12-18MHz', value: 65 },
+        ],
+      },
+      {
+        name: '超短波频段',
+        children: [
+          { name: '30-88MHz', value: 150 },
+          { name: '108-174MHz', value: 110 },
+          { name: '225-400MHz', value: 90 },
+          { name: '400-512MHz', value: 75 },
+        ],
+      },
+      {
+        name: '微波频段',
+        children: [
+          { name: '1-2GHz', value: 60 },
+          { name: '2-4GHz', value: 45 },
+          {
+            name: '4-8GHz',
+            children: [
+              { name: 'C波段', value: 30 },
+              { name: 'X波段', value: 25 },
+            ],
+          },
+          { name: '8-12GHz', value: 20 },
+        ],
+      },
+      {
+        name: '毫米波频段',
+        children: [
+          { name: '24-40GHz', value: 15 },
+          { name: '40-60GHz', value: 10 },
+          { name: '60-90GHz', value: 8 },
+        ],
+      },
+    ],
+  };
+
+  // 深拷贝
+  function clone(obj) { return JSON.parse(JSON.stringify(obj)); }
+
+  // ==================== Tab 切换 ====================
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.chart-panel').forEach(p => p.classList.remove('active'));
+      this.classList.add('active');
+      document.getElementById(`panel-${this.dataset.tab}`).classList.add('active');
+
+      // 切换时重绘（处理 container 尺寸变化）
+      const id = this.dataset.tab;
+      if (id === 'tree') renderTree();
+      else if (id === 'sunburst') renderSunburst();
+      else if (id === 'treemap') renderTreemap();
+    });
+  });
+
+  // ==================== 案例一：可折叠树图 ====================
+  let treeRoot, treeLayout;
+
+  function renderTree() {
+    const container = document.getElementById('tree-container');
+    const width = container.clientWidth || 1000;
+    const height = 520;
+    const dx = 20, dy = 100; // 节点间距
+
+    // 清空
+    container.innerHTML = `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMid meet"></svg>`;
+    const svg = d3.select('#tree-container svg');
+    const g = svg.append('g').attr('transform', `translate(60,${height / 2})`);
+
+    // 构建层级 & 布局
+    treeRoot = d3.hierarchy(clone(hierarchyData));
+    treeLayout = d3.tree().size([height - dy * 2, width - dx * 4]).nodeSize([dx * 1.5, dy * 2.5]);
+    treeLayout(treeRoot);
+
+    // 连接线生成器
+    const linkGen = d3.linkHorizontal()
+      .x(d => d.y)
+      .y(d => d.x);
+
+    // 第一次渲染
+    drawTree(g, treeRoot, linkGen);
+
+    // 按钮事件
+    document.querySelectorAll('[data-tree-action]').forEach(btn => {
+      btn.onclick = function () {
+        document.querySelectorAll('[data-tree-action]').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        const action = this.dataset.treeAction;
+        if (action === 'expand') {
+          treeRoot.descendants().forEach(d => {
+            if (d.data.children) d.children = d.data.children.map(c => d3.hierarchy(c).depth ? null : null);
+          });
+          // 用 _children 恢复方案：先把 _children 设回去
+          treeRoot.descendants().forEach(d => {
+            if (d._children) { d.children = d._children; d._children = null; }
+          });
+          treeLayout(treeRoot);
+          drawTree(g, treeRoot, linkGen);
+        } else if (action === 'collapse') {
+          treeRoot.descendants().forEach(d => {
+            if (d.depth >= 2 && d.children) {
+              d._children = d.children;
+              d.children = null;
+            }
+          });
+          treeLayout(treeRoot);
+          drawTree(g, treeRoot, linkGen);
+        } else if (action === 'reset') {
+          treeRoot = d3.hierarchy(clone(hierarchyData));
+          treeLayout(treeRoot);
+          drawTree(g, treeRoot, linkGen);
+        }
+      };
+    });
+  }
+
+  function drawTree(g, root, linkGen) {
+    // 连线
+    const links = g.selectAll('.tree-link').data(root.links());
+    links.exit().remove();
+    const enterLinks = links.enter().append('path').attr('class', 'tree-link');
+    enterLinks.merge(links)
+      .transition().duration(500)
+      .attr('d', d => linkGen(d));
+
+    // 节点组
+    const nodes = g.selectAll('.tree-node').data(root.descendants());
+    nodes.exit().remove();
+
+    const enterNodes = nodes.enter().append('g')
+      .attr('class', 'tree-node')
+      .style('cursor', 'pointer')
+      .on('click', (event, d) => {
+        if (d.children) {
+          d._children = d.children;
+          d.children = null;
+        } else if (d._children) {
+          d.children = d._children;
+          d._children = null;
+        } else {
+          return; // 叶子节点不折叠
+        }
+        treeLayout(root);
+        drawTree(g, root, linkGen);
+      });
+
+    enterNodes.append('circle')
+      .attr('r', d => d.children || d._children ? 7 : 4.5)
+      .attr('fill', d => d.children || d._children ? '#a78bfa' : '#4f9dff')
+      .attr('stroke', '#111827')
+      .attr('stroke-width', 1.5);
+
+    enterNodes.append('text')
+      .attr('class', 'tree-label')
+      .attr('dy', -12)
+      .attr('text-anchor', 'middle');
+
+    // 合并更新
+    const allNodes = enterNodes.merge(nodes);
+    allNodes.transition().duration(500)
+      .attr('transform', d => `translate(${d.y},${d.x})`);
+
+    allNodes.select('circle')
+      .transition().duration(300)
+      .attr('r', d => d.children || d._children ? 7 : 4.5)
+      .attr('fill', d => d.children || d._children ? '#a78bfa' : '#4f9dff');
+
+    allNodes.select('text')
+      .text(d => d.data.name)
+      .attr('fill', d => {
+        if (d._children) return '#ffb454'; // 有折叠子节点
+        return d.children ? '#cdd6e8' : '#8ba0c0';
+      });
+  }
+
+  // ==================== 案例二：旭日图 ====================
+  function renderSunburst() {
+    const container = document.getElementById('sunburst-container');
+    const size = Math.min(container.clientWidth || 600, 600);
+    const radius = size / 2;
+
+    container.innerHTML = `<svg viewBox="0 0 ${size} ${size}" preserveAspectRatio="xMidYMid meet" style="max-width:600px;margin:0 auto;"></svg>`;
+    const svg = d3.select('#sunburst-container svg');
+    const g = svg.append('g').attr('transform', `translate(${size / 2},${size / 2})`);
+
+    const color = d3.scaleOrdinal()
+      .domain(['电磁监测系统', '短波频段', '超短波频段', '微波频段', '毫米波频段',
+        '1.5-3MHz', '3-6MHz', '6-12MHz', '12-18MHz',
+        '30-88MHz', '108-174MHz', '225-400MHz', '400-512MHz',
+        '1-2GHz', '2-4GHz', '4-8GHz', '8-12GHz',
+        'C波段', 'X波段', '24-40GHz', '40-60GHz', '60-90GHz'])
+      .range([
+        '#4f9dff', '#00d4c8', '#ffb454', '#ff5d85', '#a78bfa',
+        '#3b82f6', '#06b6d4', '#f59e0b', '#ef4444',
+        '#8b5cf6', '#10b981', '#f97316', '#ec4899',
+        '#6366f1', '#14b8a6', '#eab308', '#f43f5e',
+        '#7c3aed', '#059669', '#d97706', '#be123c',
+      ]);
+
+    // 构建 partition 层级
+    const root = d3.hierarchy(clone(hierarchyData)).sum(d => d.value);
+    const partition = d3.partition().size([2 * Math.PI, radius]);
+    partition(root);
+
+    // 弧形生成器
+    const arc = d3.arc()
+      .startAngle(d => d.x0)
+      .endAngle(d => d.x1)
+      .padAngle(d => Math.min((d.x1 - d.x0) / 2, 0.005))
+      .padRadius(radius / 2)
+      .innerRadius(d => d.y0)
+      .outerRadius(d => Math.max(d.y0, d.y1 - 1));
+
+    // tooltip
+    const tooltip = d3.select('#sunburst-container').append('div')
+      .attr('class', 'sunburst-tooltip');
+
+    // 绘制弧形（跳过根节点 depth=0）
+    const paths = g.selectAll('path')
+      .data(root.descendants().filter(d => d.depth > 0))
+      .join('path')
+      .attr('d', arc)
+      .attr('fill', d => {
+        // 向上找有颜色的祖先
+        let node = d;
+        while (node) {
+          const c = color(node.data.name);
+          if (c && c !== node.data.name) return c;
+          node = node.parent;
+        }
+        return '#2a4a7a';
+      })
+      .attr('fill-opacity', 1)
+      .attr('stroke', '#111827')
+      .attr('stroke-width', 1)
+      .on('mouseenter', function (event, d) {
+        const ancestors = d.ancestors().map(a => a.data.name).reverse();
+        tooltip.style('opacity', 1)
+          .html(`<strong>${d.data.name}</strong><br>路径: ${ancestors.join(' → ')}<br>值: ${d.value}`);
+        d3.select(this).attr('fill-opacity', 0.7);
+      })
+      .on('mousemove', (event) => {
+        const rect = container.getBoundingClientRect();
+        tooltip.style('left', (event.clientX - rect.left + 14) + 'px')
+          .style('top', (event.clientY - rect.top - 36) + 'px');
+      })
+      .on('mouseleave', function () {
+        tooltip.style('opacity', 0);
+        d3.select(this).attr('fill-opacity', 1);
+      })
+      .on('click', function (event, d) {
+        // 高亮当前路径：把非路径节点变灰
+        const ancestors = new Set(d.ancestors());
+        g.selectAll('path')
+          .attr('fill-opacity', p => ancestors.has(p) ? 0.9 : 0.15);
+      });
+
+    // 中心文字
+    g.append('text')
+      .attr('text-anchor', 'middle')
+      .attr('dy', '0.35em')
+      .attr('fill', '#cdd6e8')
+      .attr('font-size', '13px')
+      .attr('font-weight', '600')
+      .text(root.data.name);
+
+    // 按钮
+    document.querySelectorAll('[data-sunburst-action]').forEach(btn => {
+      btn.onclick = function () {
+        document.querySelectorAll('[data-sunburst-action]').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        if (this.dataset.sunburstAction === 'reset') {
+          g.selectAll('path').attr('fill-opacity', 1);
+        }
+      };
+    });
+  }
+
+  // ==================== 案例三：Treemap ====================
+  let treemapRoot, treemapCurrent, treemapHistory = [];
+
+  function renderTreemap() {
+    const container = document.getElementById('treemap-container');
+    const width = container.clientWidth || 1000;
+    const height = 480;
+
+    // 颜色
+    const color = d3.scaleOrdinal()
+      .domain(['电磁监测系统', '短波频段', '超短波频段', '微波频段', '毫米波频段'])
+      .range(['#4f9dff', '#00d4c8', '#ffb454', '#ff5d85', '#a78bfa']);
+
+    container.innerHTML = `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMid meet"></svg>`;
+    const svg = d3.select('#treemap-container svg');
+
+    treemapRoot = d3.hierarchy(clone(hierarchyData))
+      .sum(d => d.value)
+      .sort((a, b) => b.value - a.value); // 按值降序排列
+
+    d3.treemap().size([width, height]).padding(3)(treemapRoot);
+    treemapCurrent = treemapRoot;
+    treemapHistory = [];
+
+    function drawTreemap(root) {
+      // 收集叶子节点和中间节点
+      const leaves = root.leaves();
+      const allNodes = root.descendants().filter(d => d.depth === root.depth + 1 || d.depth === root.depth + 2);
+
+      // 背景（父节点区域）
+      svg.selectAll('*').remove();
+
+      // 绘制子节点矩形
+      const cells = svg.selectAll('g')
+        .data(allNodes)
+        .join('g')
+        .attr('transform', d => `translate(${d.x0},${d.y0})`);
+
+      cells.append('rect')
+        .attr('class', 'treemap-cell')
+        .attr('width', d => Math.max(0, d.x1 - d.x0))
+        .attr('height', d => Math.max(0, d.y1 - d.y0))
+        .attr('fill', d => {
+          let node = d;
+          while (node && node.depth > 0) {
+            const c = color(node.data.name);
+            if (c) return d3.interpolateRgb(c, '#111827')(node.depth / root.depth * 0.4);
+            node = node.parent;
+          }
+          return '#2a4a7a';
+        })
+        .attr('rx', 4)
+        .on('click', (event, d) => {
+          if (d.children || d._children) {
+            treemapHistory.push(root);
+            d3.treemap().size([width, height]).padding(3)(d);
+            treemapCurrent = d;
+            drawTreemap(d);
+            document.querySelector('[data-treemap-action="back"]').disabled = false;
+          }
+        });
+
+      // 文字标签
+      cells.append('text')
+        .attr('x', 8)
+        .attr('y', 18)
+        .attr('font-size', '12px')
+        .attr('fill', '#cdd6e8')
+        .attr('font-weight', '500')
+        .style('pointer-events', 'none')
+        .text(d => {
+          const w = d.x1 - d.x0;
+          const name = d.data.name;
+          if (w < 60) return name.length > 4 ? name.slice(0, 3) + '..' : name;
+          return name;
+        });
+
+      // 数值标签（叶子节点）
+      cells.filter(d => !d.children && !d._children)
+        .append('text')
+        .attr('x', 8)
+        .attr('y', 34)
+        .attr('font-size', '11px')
+        .attr('fill', '#5a6f8a')
+        .style('pointer-events', 'none')
+        .text(d => d.value);
+
+      // 面包屑
+      const crumbs = [];
+      let node = treemapCurrent;
+      while (node) {
+        crumbs.unshift(node);
+        node = node.parent;
+      }
+
+      const crumbG = svg.append('g').attr('transform', 'translate(8,8)');
+      crumbs.forEach((c, i) => {
+        const g = crumbG.append('g').attr('transform', `translate(${i * 120},0)`);
+        g.append('rect')
+          .attr('width', 110).attr('height', 24).attr('rx', 4)
+          .attr('fill', '#1a2d50').attr('stroke', '#2a4a7a').attr('stroke-width', 1);
+        g.append('text')
+          .attr('x', 55).attr('y', 16)
+          .attr('text-anchor', 'middle')
+          .attr('font-size', '11px').attr('fill', '#8ba0c0')
+          .text(c.data.name);
+        if (i < crumbs.length - 1) {
+          g.append('text')
+            .attr('x', 113).attr('y', 16)
+            .attr('text-anchor', 'middle').attr('font-size', '10px').attr('fill', '#5a6f8a')
+            .text('›');
+        }
+      });
+    }
+
+    // 初始渲染
+    // 直接用一级子节点渲染
+    d3.treemap().size([width, height - 36]).padding(3).paddingTop(36)(treemapRoot);
+    treemapCurrent = treemapRoot;
+    drawTreemap(treemapRoot);
+
+    // 返回上级按钮
+    const backBtn = document.querySelector('[data-treemap-action="back"]');
+    backBtn.onclick = function () {
+      if (treemapHistory.length > 0) {
+        treemapCurrent = treemapHistory.pop();
+        drawTreemap(treemapCurrent);
+        if (treemapHistory.length === 0) this.disabled = true;
+      }
+    };
+  }
+
+  // ==================== 初始化 ====================
+  renderTree();
+  renderSunburst();
+  renderTreemap();
+</script>
+</body>
+</html>

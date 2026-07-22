@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>D3.js 综合实战案例 — 数据驱动仪表盘</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      background: #0c1222;
+      color: #cdd6e8;
+      min-height: 100vh;
+      padding: 24px;
+    }
+    h1 {
+      text-align: center;
+      font-size: 28px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #4f9dff, #00d4c8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .subtitle {
+      text-align: center;
+      font-size: 13px;
+      color: #5a6f8a;
+      margin-bottom: 24px;
+    }
+    .dashboard {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
+      gap: 20px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    .card {
+      background: #111827;
+      border: 1px solid #1e2d45;
+      border-radius: 12px;
+      padding: 20px;
+      transition: border-color 0.3s;
+    }
+    .card:hover { border-color: #2a4a7a; }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .card-title {
+      font-size: 15px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-badge {
+      font-size: 11px;
+      padding: 2px 10px;
+      border-radius: 20px;
+      background: #1a2d50;
+      color: #4f9dff;
+      border: 1px solid #2a4a7a;
+    }
+    .btn-group {
+      display: flex;
+      gap: 6px;
+    }
+    .btn {
+      padding: 5px 14px;
+      border: 1px solid #2a4a7a;
+      border-radius: 6px;
+      background: transparent;
+      color: #8ba0c0;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    .btn:hover {
+      background: #1a2d50;
+      color: #cdd6e8;
+    }
+    .btn.active {
+      background: #2a4a7a;
+      color: #fff;
+      border-color: #4f9dff;
+    }
+    svg {
+      display: block;
+      width: 100%;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .tip {
+      margin-top: 10px;
+      font-size: 11px;
+      color: #5a6f8a;
+      line-height: 1.6;
+      padding: 10px;
+      background: #0d1525;
+      border-radius: 6px;
+      border-left: 3px solid #4f9dff;
+    }
+    .tip code {
+      color: #00d4c8;
+      background: #1a2d50;
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-size: 11px;
+    }
+    /* 轴样式 */
+    .axis line, .axis path { stroke: #1e2d45; }
+    .axis text { fill: #5a6f8a; font-size: 11px; }
+    .grid line { stroke: #1a2538; stroke-dasharray: 2 4; }
+    .grid path { display: none; }
+  </style>
+</head>
+<body>
+
+<h1>D3.js 数据驱动仪表盘</h1>
+<p class="subtitle">覆盖：Selections · Enter-Update-Exit · 比例尺 Scale · 轴 Axis · 过渡动画 Transition · 力导向图 Force</p>
+
+<div class="dashboard">
+
+  <!-- ==================== 案例 1：动态柱状图（Enter-Update-Exit + Scale + Axis + Transition） ==================== -->
+  <div class="card" style="grid-column: 1 / -1;">
+    <div class="card-header">
+      <span class="card-title">
+        案例一：动态柱状图
+        <span class="card-badge">Enter-Update-Exit</span>
+        <span class="card-badge">Scale</span>
+        <span class="card-badge">Axis</span>
+        <span class="card-badge">Transition</span>
+      </span>
+      <div class="btn-group">
+        <button class="btn active" data-dataset="1">数据集 A</button>
+        <button class="btn" data-dataset="2">数据集 B</button>
+        <button class="btn" data-dataset="3">数据集 C</button>
+        <button class="btn" data-dataset="shuffle">随机打乱</button>
+      </div>
+    </div>
+    <div id="bar-chart-container"></div>
+    <div class="tip">
+      <strong>知识点：</strong>
+      ① <code>scaleBand</code> 做类目 x 轴 + <code>scaleLinear</code> 做数值 y 轴；
+      ② <code>axisBottom</code> / <code>axisLeft</code> 自动生成轴；
+      ③ <code>.data(data, d => d.name)</code> 用 name 做 key 保证稳定匹配；
+      ④ <code>enter → merge → exit</code> 三部曲让 DOM 跟数据走；
+      ⑤ <code>.transition().duration(600)</code> 让每次数据变化都平滑过渡。
+    </div>
+  </div>
+
+  <!-- ==================== 案例 2：折线面积图（连续数据 + 比例尺 + 过渡） ==================== -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">
+        案例二：时序面积图
+        <span class="card-badge">scaleTime</span>
+        <span class="card-badge">line/area</span>
+      </span>
+      <div class="btn-group">
+        <button class="btn active" data-period="7">近 7 天</button>
+        <button class="btn" data-period="30">近 30 天</button>
+        <button class="btn" data-period="90">近 90 天</button>
+      </div>
+    </div>
+    <div id="line-chart-container"></div>
+    <div class="tip">
+      <strong>知识点：</strong>
+      ① <code>scaleTime</code> 处理时间轴，自动算像素坐标；
+      ② <code>d3.line</code> / <code>d3.area</code> 根据数据生成 SVG path；
+      ③ 切换数据时用 transition 平滑变化，path 动画通过 <code>stroke-dasharray</code> 实现。
+    </div>
+  </div>
+
+  <!-- ==================== 案例 3：散点气泡图（多维度映射） ==================== -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">
+        案例三：散点气泡图
+        <span class="card-badge">scaleLinear</span>
+        <span class="card-badge">scaleSequential</span>
+        <span class="card-badge">颜色映射</span>
+      </span>
+      <div class="btn-group">
+        <button class="btn active" data-scatter="refresh">刷新数据</button>
+      </div>
+    </div>
+    <div id="scatter-chart-container"></div>
+    <div class="tip">
+      <strong>知识点：</strong>
+      ① 两个 <code>scaleLinear</code> 分别映射 x/y 到像素；
+      ② <code>scaleSequential</code> 按值映射颜色（热力感）；
+      ③ 气泡 <code>r</code>（半径）映射第三个维度，实现四维可视化。
+    </div>
+  </div>
+
+  <!-- ==================== 案例 4：力导向关系图（forceSimulation + 拖拽） ==================== -->
+  <div class="card" style="grid-column: 1 / -1;">
+    <div class="card-header">
+      <span class="card-title">
+        案例四：力导向关系网络
+        <span class="card-badge">forceSimulation</span>
+        <span class="card-badge">d3.drag</span>
+        <span class="card-badge">tick</span>
+      </span>
+      <div class="btn-group">
+        <button class="btn active" data-force="reset">重置布局</button>
+        <button class="btn" data-force="add-node">添加节点</button>
+      </div>
+    </div>
+    <div id="force-chart-container"></div>
+    <div class="tip">
+      <strong>知识点：</strong>
+      ① <code>forceSimulation</code> 用力的模型自动布局节点；
+      ② <code>forceLink</code>（连线拉力）+ <code>forceManyBody</code>（互斥力）+ <code>forceCenter</code>（居中力）三力协同；
+      ③ <code>d3.drag</code> 实现拖拽交互；
+      ④ <code>on('tick')</code> 每帧更新节点坐标 → 动画丝滑；
+      ⑤ <strong>试试拖拽任意节点</strong>，观察力的实时作用！
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ==================== 工具函数 ====================
+  const margin = { top: 20, right: 30, bottom: 40, left: 50 };
+
+  function getSize(containerId) {
+    const el = document.getElementById(containerId);
+    const width = el.clientWidth;
+    const height = 320;
+    return { width, height, innerW: width - margin.left - margin.right, innerH: height - margin.top - margin.bottom };
+  }
+
+  function createSvg(containerId) {
+    const { width, height } = getSize(containerId);
+    const svg = d3.select(`#${containerId}`)
+      .html('')
+      .append('svg')
+      .attr('viewBox', `0 0 ${width} ${height}`)
+      .attr('preserveAspectRatio', 'xMidYMid meet');
+    return svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+  }
+
+  // 柱状图配色
+  const barColors = ['#4f9dff', '#00d4c8', '#ffb454', '#ff5d85', '#a78bfa', '#34d399'];
+
+  // ==================== 案例一：动态柱状图 ====================
+  (function barChart() {
+    const g = createSvg('bar-chart-container');
+    const { innerW, innerH } = getSize('bar-chart-container');
+
+    const datasets = {
+      1: [
+        { name: '设备A', value: 85 },
+        { name: '设备B', value: 62 },
+        { name: '设备C', value: 73 },
+        { name: '设备D', value: 91 },
+        { name: '设备E', value: 45 },
+        { name: '设备F', value: 58 },
+      ],
+      2: [
+        { name: '设备A', value: 72 },
+        { name: '设备B', value: 88 },
+        { name: '设备D', value: 65 },
+        { name: '设备E', value: 93 },
+        { name: '设备G', value: 51 },
+        { name: '设备H', value: 77 },
+      ],
+      3: [
+        { name: '设备B', value: 55 },
+        { name: '设备C', value: 80 },
+        { name: '设备F', value: 67 },
+        { name: '设备G', value: 89 },
+        { name: '设备H', value: 71 },
+        { name: '设备I', value: 94 },
+      ],
+      shuffle: null,
+    };
+
+    // 比例尺
+    const xScale = d3.scaleBand().range([0, innerW]).padding(0.25);
+    const yScale = d3.scaleLinear().range([innerH, 0]);
+
+    // 轴线
+    const xAxisG = g.append('g').attr('class', 'axis').attr('transform', `translate(0,${innerH})`);
+    const yAxisG = g.append('g').attr('class', 'axis');
+
+    // Y 轴网格线
+    const gridG = g.append('g').attr('class', 'grid');
+
+    function update(data) {
+      // 更新比例尺域
+      xScale.domain(data.map(d => d.name));
+      yScale.domain([0, d3.max(data, d => d.value) * 1.15]);
+
+      // 更新轴
+      xAxisG.transition().duration(500).call(d3.axisBottom(xScale));
+      yAxisG.transition().duration(500).call(d3.axisLeft(yScale).ticks(5));
+      gridG.transition().duration(500).call(
+        d3.axisLeft(yScale).ticks(5).tickSize(-innerW).tickFormat('')
+      );
+
+      // === 核心：Enter-Update-Exit 三部曲 ===
+      const bars = g.selectAll('.bar').data(data, d => d.name);
+
+      // EXIT：数据中没有的 → 淡出移除
+      bars.exit()
+        .transition().duration(400)
+        .attr('y', innerH)
+        .attr('height', 0)
+        .style('opacity', 0)
+        .remove();
+
+      // ENTER：数据中新增的 → 创建并设置初始状态
+      const enterBars = bars.enter()
+        .append('rect')
+        .attr('class', 'bar')
+        .attr('x', d => xScale(d.name))
+        .attr('width', xScale.bandwidth())
+        .attr('y', innerH)
+        .attr('height', 0)
+        .style('opacity', 0)
+        .attr('fill', (d, i) => barColors[i % barColors.length])
+        .attr('rx', 4);
+
+      // ENTER + UPDATE 统一过渡到新状态
+      enterBars.merge(bars)
+        .transition().duration(600)
+        .delay((d, i) => i * 50) // 错峰动画
+        .attr('x', d => xScale(d.name))
+        .attr('width', xScale.bandwidth())
+        .attr('y', d => yScale(d.value))
+        .attr('height', d => innerH - yScale(d.value))
+        .style('opacity', 1);
+
+      // 更新数据标签
+      const labels = g.selectAll('.bar-label').data(data, d => d.name);
+      labels.exit().transition().duration(300).style('opacity', 0).remove();
+      const enterLabels = labels.enter()
+        .append('text')
+        .attr('class', 'bar-label')
+        .attr('text-anchor', 'middle')
+        .attr('font-size', '11px')
+        .attr('fill', '#8ba0c0')
+        .style('opacity', 0);
+      enterLabels.merge(labels)
+        .transition().duration(600).delay((d, i) => i * 50 + 100)
+        .attr('x', d => xScale(d.name) + xScale.bandwidth() / 2)
+        .attr('y', d => yScale(d.value) - 8)
+        .text(d => d.value)
+        .style('opacity', 1);
+    }
+
+    // 按钮交互
+    document.querySelectorAll('[data-dataset]').forEach(btn => {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('[data-dataset]').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        const key = this.dataset.dataset;
+        if (key === 'shuffle') {
+          const currentData = datasets[1]; // 用数据集 A 的数据名称，随机打乱值
+          const shuffled = currentData.map(d => ({ name: d.name, value: Math.floor(Math.random() * 90 + 10) }));
+          update(shuffled);
+        } else {
+          update(datasets[key]);
+        }
+      });
+    });
+
+    update(datasets[1]);
+  })();
+
+  // ==================== 案例二：时序面积图 ====================
+  (function lineChart() {
+    const g = createSvg('line-chart-container');
+    const { innerW, innerH } = getSize('line-chart-container');
+    const container = document.getElementById('line-chart-container');
+
+    function generateData(days) {
+      const data = [];
+      const now = new Date();
+      let value = 50 + Math.random() * 30;
+      for (let i = days - 1; i >= 0; i--) {
+        const date = new Date(now);
+        date.setDate(date.getDate() - i);
+        value += (Math.random() - 0.45) * 15;
+        value = Math.max(10, Math.min(100, value));
+        data.push({ date, value: Math.round(value * 10) / 10 });
+      }
+      return data;
+    }
+
+    let currentData = generateData(7);
+    let animating = false;
+
+    // 比例尺
+    const xScale = d3.scaleTime().range([0, innerW]);
+    const yScale = d3.scaleLinear().range([innerH, 0]);
+
+    // 轴
+    const xAxisG = g.append('g').attr('class', 'axis').attr('transform', `translate(0,${innerH})`);
+    const yAxisG = g.append('g').attr('class', 'axis');
+    const gridG = g.append('g').attr('class', 'grid');
+
+    // 面积生成器
+    const areaGen = d3.area()
+      .x(d => xScale(d.date))
+      .y0(innerH)
+      .y1(d => yScale(d.value))
+      .curve(d3.curveMonotoneX);
+
+    // 线生成器
+    const lineGen = d3.line()
+      .x(d => xScale(d.date))
+      .y(d => yScale(d.value))
+      .curve(d3.curveMonotoneX);
+
+    // 渐变定义
+    const defs = g.append('defs');
+    const gradient = defs.append('linearGradient')
+      .attr('id', 'area-gradient')
+      .attr('x1', '0%').attr('y1', '0%')
+      .attr('x2', '0%').attr('y2', '100%');
+    gradient.append('stop').attr('offset', '0%').attr('stop-color', '#4f9dff').attr('stop-opacity', 0.35);
+    gradient.append('stop').attr('offset', '100%').attr('stop-color', '#4f9dff').attr('stop-opacity', 0.02);
+
+    const areaPath = g.append('path').attr('fill', 'url(#area-gradient)');
+    const linePath = g.append('path').attr('fill', 'none').attr('stroke', '#4f9dff').attr('stroke-width', 2.5);
+
+    // 圆点容器
+    const dotsG = g.append('g');
+
+    function render(data, animate = true) {
+      xScale.domain(d3.extent(data, d => d.date));
+      yScale.domain([0, d3.max(data, d => d.value) * 1.1]);
+
+      xAxisG.transition().duration(animate ? 500 : 0).call(d3.axisBottom(xScale).ticks(6).tickFormat(d3.timeFormat('%m-%d')));
+      yAxisG.transition().duration(animate ? 500 : 0).call(d3.axisLeft(yScale).ticks(5));
+      gridG.transition().duration(animate ? 500 : 0).call(
+        d3.axisLeft(yScale).ticks(5).tickSize(-innerW).tickFormat('')
+      );
+
+      areaPath.datum(data).transition().duration(animate ? 600 : 0).attr('d', areaGen);
+      linePath.datum(data).transition().duration(animate ? 600 : 0).attr('d', lineGen);
+
+      // 数据点
+      const dots = dotsG.selectAll('circle').data(data);
+      dots.exit().transition().duration(300).attr('r', 0).remove();
+      const enterDots = dots.enter().append('circle').attr('r', 0).attr('fill', '#4f9dff').attr('stroke', '#111827').attr('stroke-width', 2);
+      enterDots.merge(dots)
+        .transition().duration(animate ? 600 : 0)
+        .attr('cx', d => xScale(d.date))
+        .attr('cy', d => yScale(d.value))
+        .attr('r', 3.5);
+    }
+
+    render(currentData, false);
+
+    document.querySelectorAll('[data-period]').forEach(btn => {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('[data-period]').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        currentData = generateData(+this.dataset.period);
+        render(currentData, true);
+      });
+    });
+  })();
+
+  // ==================== 案例三：散点气泡图 ====================
+  (function scatterChart() {
+    const g = createSvg('scatter-chart-container');
+    const { innerW, innerH } = getSize('scatter-chart-container');
+
+    // x: 频率, y: 信号强度, r: 带宽, color: 质量
+    function generateData() {
+      const data = [];
+      for (let i = 0; i < 30; i++) {
+        data.push({
+          id: i,
+          freq: Math.random() * 2000 + 500,       // 频率 500-2500 MHz
+          signal: Math.random() * 80 + 10,         // 信号强度 10-90 dB
+          bandwidth: Math.random() * 15 + 3,        // 带宽 3-18 MHz
+          quality: Math.random() * 100,             // 质量 0-100
+        });
+      }
+      return data;
+    }
+
+    let data = generateData();
+
+    const xScale = d3.scaleLinear().range([0, innerW]);
+    const yScale = d3.scaleLinear().range([innerH, 0]);
+    const rScale = d3.scaleLinear().range([4, 16]);
+    const colorScale = d3.scaleSequential(d3.interpolateRdYlBu).domain([100, 0]); // 质量高 → 蓝，低 → 红
+
+    const xAxisG = g.append('g').attr('class', 'axis').attr('transform', `translate(0,${innerH})`);
+    const yAxisG = g.append('g').attr('class', 'axis');
+    const gridG = g.append('g').attr('class', 'grid');
+
+    // Tooltip
+    const tooltip = d3.select('body').append('div')
+      .style('position', 'absolute')
+      .style('pointer-events', 'none')
+      .style('background', '#1a2d50')
+      .style('color', '#cdd6e8')
+      .style('padding', '6px 12px')
+      .style('border-radius', '6px')
+      .style('font-size', '12px')
+      .style('border', '1px solid #2a4a7a')
+      .style('opacity', 0)
+      .style('transition', 'opacity 0.15s');
+
+    function render(d, animate = true) {
+      xScale.domain([400, 2600]);
+      yScale.domain([0, 100]);
+      rScale.domain([0, 20]);
+
+      xAxisG.transition().duration(animate ? 500 : 0).call(d3.axisBottom(xScale).ticks(6).tickFormat(d => d + ' MHz'));
+      yAxisG.transition().duration(animate ? 500 : 0).call(d3.axisLeft(yScale).ticks(5).tickFormat(d => d + ' dB'));
+      gridG.transition().duration(animate ? 500 : 0).call(
+        d3.axisLeft(yScale).ticks(5).tickSize(-innerW).tickFormat('')
+      );
+
+      const bubbles = g.selectAll('.bubble').data(d, d => d.id);
+
+      bubbles.exit().transition().duration(400).attr('r', 0).style('opacity', 0).remove();
+
+      const enter = bubbles.enter()
+        .append('circle')
+        .attr('class', 'bubble')
+        .attr('r', 0)
+        .style('opacity', 0.75)
+        .attr('stroke', '#111827')
+        .attr('stroke-width', 1.5)
+        .on('mouseenter', (event, d) => {
+          tooltip.style('opacity', 1)
+            .style('left', event.pageX + 12 + 'px')
+            .style('top', event.pageY - 28 + 'px')
+            .html(`频率: <strong>${d.freq.toFixed(0)}</strong> MHz<br>信号: <strong>${d.signal.toFixed(0)}</strong> dB<br>质量: <strong>${d.quality.toFixed(0)}</strong>%`);
+        })
+        .on('mousemove', (event) => {
+          tooltip.style('left', event.pageX + 12 + 'px').style('top', event.pageY - 28 + 'px');
+        })
+        .on('mouseleave', () => tooltip.style('opacity', 0));
+
+      enter.merge(bubbles)
+        .transition().duration(animate ? 600 : 0)
+        .delay(animate ? (d, i) => i * 15 : 0)
+        .attr('cx', d => xScale(d.freq))
+        .attr('cy', d => yScale(d.signal))
+        .attr('r', d => rScale(d.bandwidth))
+        .attr('fill', d => colorScale(d.quality))
+        .style('opacity', 0.8);
+    }
+
+    render(data, false);
+
+    document.querySelector('[data-scatter]').addEventListener('click', function () {
+      data = generateData();
+      render(data, true);
+    });
+  })();
+
+  // ==================== 案例四：力导向关系网络 ====================
+  (function forceGraph() {
+    const container = document.getElementById('force-chart-container');
+    const width = container.clientWidth;
+    const height = 400;
+    container.innerHTML = `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMid meet"></svg>`;
+    const svg = d3.select('#force-chart-container svg');
+
+    // 节点数据（模拟设备拓扑）
+    const baseNodes = [
+      { id: 'core', name: '核心交换机', group: 'network', r: 12 },
+      { id: 'server1', name: '应用服务器', group: 'server', r: 9 },
+      { id: 'server2', name: '数据库服务器', group: 'server', r: 9 },
+      { id: 'deviceA', name: '监测站A', group: 'station', r: 8 },
+      { id: 'deviceB', name: '监测站B', group: 'station', r: 8 },
+      { id: 'deviceC', name: '监测站C', group: 'station', r: 8 },
+      { id: 'deviceD', name: '监测站D', group: 'station', r: 8 },
+      { id: 'sensor1', name: '传感器1', group: 'sensor', r: 6 },
+      { id: 'sensor2', name: '传感器2', group: 'sensor', r: 6 },
+      { id: 'sensor3', name: '传感器3', group: 'sensor', r: 6 },
+    ];
+
+    const baseLinks = [
+      { source: 'core', target: 'server1' },
+      { source: 'core', target: 'server2' },
+      { source: 'core', target: 'deviceA' },
+      { source: 'core', target: 'deviceB' },
+      { source: 'core', target: 'deviceC' },
+      { source: 'core', target: 'deviceD' },
+      { source: 'deviceA', target: 'sensor1' },
+      { source: 'deviceB', target: 'sensor2' },
+      { source: 'deviceC', target: 'sensor3' },
+    ];
+
+    const groupColors = {
+      network: '#ff6b6b',
+      server: '#4f9dff',
+      station: '#00d4c8',
+      sensor: '#ffb454',
+    };
+
+    let nodes = baseNodes.map(n => ({ ...n }));
+    let links = baseLinks.map(l => ({ ...l }));
+
+    // 创建 simulation
+    const simulation = d3.forceSimulation(nodes)
+      .force('link', d3.forceLink(links).id(d => d.id).distance(90))
+      .force('charge', d3.forceManyBody().strength(-350))
+      .force('center', d3.forceCenter(width / 2, height / 2))
+      .force('collide', d3.forceCollide().radius(d => d.r + 4));
+
+    // 绘制连线
+    const linkG = svg.append('g');
+    const link = linkG.selectAll('line')
+      .data(links)
+      .join('line')
+      .attr('stroke', '#2a4a7a')
+      .attr('stroke-width', 1.5)
+      .attr('stroke-opacity', 0.6);
+
+    // 绘制节点组
+    const nodeG = svg.append('g');
+    const node = nodeG.selectAll('g')
+      .data(nodes)
+      .join('g')
+      .call(drag(simulation));
+
+    // 节点圆形
+    node.append('circle')
+      .attr('r', d => d.r)
+      .attr('fill', d => groupColors[d.group])
+      .attr('stroke', '#111827')
+      .attr('stroke-width', 2);
+
+    // 节点标签
+    node.append('text')
+      .text(d => d.name)
+      .attr('font-size', '11px')
+      .attr('fill', '#8ba0c0')
+      .attr('text-anchor', 'middle')
+      .attr('dy', d => d.r + 14)
+      .style('pointer-events', 'none');
+
+    // 拖拽交互
+    function drag(sim) {
+      function dragstarted(event, d) {
+        if (!event.active) sim.alphaTarget(0.3).restart();
+        d.fx = d.x;
+        d.fy = d.y;
+      }
+      function dragged(event, d) {
+        d.fx = event.x;
+        d.fy = event.y;
+      }
+      function dragended(event, d) {
+        if (!event.active) sim.alphaTarget(0);
+        d.fx = null;
+        d.fy = null;
+      }
+      return d3.drag()
+        .on('start', dragstarted)
+        .on('drag', dragged)
+        .on('end', dragended);
+    }
+
+    // tick 更新
+    simulation.on('tick', () => {
+      link
+        .attr('x1', d => d.source.x)
+        .attr('y1', d => d.source.y)
+        .attr('x2', d => d.target.x)
+        .attr('y2', d => d.target.y);
+      node.attr('transform', d => `translate(${d.x},${d.y})`);
+    });
+
+    // 重置按钮
+    document.querySelector('[data-force="reset"]').addEventListener('click', () => {
+      nodes.forEach(n => { n.fx = null; n.fy = null; });
+      simulation.alpha(0.5).restart();
+    });
+
+    // 添加节点按钮
+    let extraId = 0;
+    document.querySelector('[data-force="add-node"]').addEventListener('click', () => {
+      const nn = { id: `extra${++extraId}`, name: `新节点${extraId}`, group: 'sensor', r: 6 };
+      const target = nodes[Math.floor(Math.random() * nodes.length)];
+      nodes.push(nn);
+      links.push({ source: nn.id, target: target.id });
+
+      // 重建 bindings
+      linkG.selectAll('line').remove();
+      nodeG.selectAll('g').remove();
+
+      link.data(links).join('line')
+        .attr('stroke', '#2a4a7a').attr('stroke-width', 1.5).attr('stroke-opacity', 0.6);
+
+      const newNodes = nodeG.selectAll('g').data(nodes).join('g').call(drag(simulation));
+      newNodes.append('circle')
+        .attr('r', d => d.r).attr('fill', d => groupColors[d.group])
+        .attr('stroke', '#111827').attr('stroke-width', 2);
+      newNodes.append('text')
+        .text(d => d.name).attr('font-size', '11px').attr('fill', '#8ba0c0')
+        .attr('text-anchor', 'middle').attr('dy', d => d.r + 14).style('pointer-events', 'none');
+
+      simulation.nodes(nodes);
+      simulation.force('link', d3.forceLink(links).id(d => d.id).distance(90));
+      simulation.alpha(0.5).restart();
+
+      // 更新 tick
+      simulation.on('tick', () => {
+        link
+          .attr('x1', d => d.source.x).attr('y1', d => d.source.y)
+          .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
+        nodeG.selectAll('g').attr('transform', d => `translate(${d.x},${d.y})`);
+      });
+    });
+
+    // 按钮高亮
+    document.querySelectorAll('[data-force]').forEach(btn => {
+      if (btn.dataset.force !== 'reset') return;
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('[data-force]').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+      });
+    });
+  })();
+</script>
+</body>
+</html>
